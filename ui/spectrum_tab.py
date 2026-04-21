@@ -6,7 +6,7 @@ import numpy as np
 def render_spectrum_tab(model, analysis):
     st.header("Spectrum Analysis")
 
-    if model is None or analysis is None:
+    if analysis is None:
         st.warning("No data available")
         return
 

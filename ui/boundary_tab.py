@@ -6,7 +6,7 @@ import numpy as np
 def render_boundary_tab(model, analysis):
     st.header("Decision Boundary Sensitivity")
 
-    if model is None or analysis is None:
+    if analysis is None:
         st.warning("No data available")
         return
 
@@ -16,7 +16,8 @@ def render_boundary_tab(model, analysis):
         return
 
     # 由 mid 构造边界附近的示意分布，可替换为逐样本真实边界距离。
-    data = np.random.normal(loc=float(mid), scale=0.01, size=200)
+    rng = np.random.default_rng(42)
+    data = rng.normal(loc=float(mid), scale=0.01, size=200)
 
     fig = px.histogram(data, nbins=30)
     fig.update_layout(title="Decision Boundary Density (Credit Cases)")

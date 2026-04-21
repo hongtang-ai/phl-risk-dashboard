@@ -123,3 +123,49 @@ def spectrum_alpha_analyzer(results: list[dict[str, Any]]) -> dict[str, float]:
     ss_tot = float(((z - z.mean()) ** 2).sum())
     r2 = float("nan") if ss_tot <= 0 else float(1.0 - ((z - zhat) ** 2).sum() / ss_tot)
     return {"alpha": float(a), "r2": r2}
+
+
+def load_demo_case() -> dict[str, Any]:
+    """
+    Fixed demo analysis payload for a German Credit rejection appeal scenario.
+
+    Notes:
+    - This is presentation-only data for stable demos (no model inference).
+    - Extra keys are safe for PDF/UI consumers; core metric keys match the pipeline.
+    """
+    eigvals = np.array([12.5, 4.2, 1.8, 0.9, 0.5, 0.3, 0.2, 0.1], dtype=float)
+
+    return {
+        "case_name": "German Credit - Rejection Analysis Demo",
+        "description": (
+            "Applicant requested €5000 used car loan. Model output q=0.48 (near decision boundary), "
+            "application rejected."
+        ),
+        # Core metrics (must match analyzer/pipeline keys)
+        "sigma": 6.23,
+        "mid": 0.0075,
+        "effective_rank": 3.12,
+        "ssi": 0.42,
+        "risk_score": 0.135,
+        "risk_level": "MEDIUM",
+        # spectrum
+        "eigvals": eigvals.tolist(),
+        # explanation
+        "interpretation": (
+            "The model exhibits reduced representational capacity at depth=3, "
+            "leading to a high-sensitivity zone near the decision boundary. "
+            "Small variations in applicant features may significantly impact approval outcomes."
+        ),
+        # regulatory mapping
+        "regulatory_note": (
+            "This analysis supports Adverse Action Explanation and aligns with "
+            "EU AI Act requirements for high-risk credit scoring systems."
+        ),
+        # recommendations
+        "recommendations": [
+            "Trigger secondary human review for applications with probability near 0.5.",
+            "Re-evaluate key features: credit history, loan amount, employment status.",
+            "Avoid fully automated decisions in high-sensitivity regions.",
+            "Monitor structural indicators (effective rank, SSI) for model drift.",
+        ],
+    }

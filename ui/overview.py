@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-def render_overview(model):
+def render_overview(model, analysis):
     st.header("Overview")
 
     st.write(
@@ -16,5 +16,12 @@ def render_overview(model):
     """
     )
 
+    if analysis is not None and analysis.get("description"):
+        st.subheader("Case Background")
+        st.write(analysis["description"])
+
+    if analysis is not None:
+        return
+
     if model is None:
-        st.warning("Please upload a model to begin analysis.")
+        st.warning("Please upload a model to begin analysis, or load the demo case from the sidebar.")

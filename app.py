@@ -3,7 +3,7 @@ import torch
 from pathlib import Path
 from typing import Any
 
-from analyzer import compute_effective_rank, compute_mid_fraction, compute_ssi
+from analyzer import compute_effective_rank, compute_mid_fraction, compute_ssi, load_demo_case
 from data_loader_credit import load_german_credit_data
 from ui.overview import render_overview
 from ui.spectrum_tab import render_spectrum_tab
@@ -105,6 +105,9 @@ model_file = st.sidebar.file_uploader("Upload Model (.pth)", type=["pth"])
 scenario = st.sidebar.selectbox("Scenario", ["German Credit - Rejection Analysis"])
 eps = st.sidebar.slider("Mid Threshold ε", 0.01, 0.1, 0.05)
 
+if "use_demo" not in st.session_state:
+    st.session_state.use_demo = False
+
 
 # ===== Load Model =====
 @st.cache_data
@@ -116,19 +119,43 @@ def load_model(file):
 
 model = load_model(model_file)
 
+# ===== Demo (no model required) =====
+st.sidebar.markdown("---")
+st.sidebar.subheader("Demo")
+if st.sidebar.button("Load German Credit Rejection Demo Case"):
+    st.session_state.use_demo = True
+if st.sidebar.button("Clear Demo Case"):
+    st.session_state.use_demo = False
+
+effective_model = None if st.session_state.use_demo else model
+
 # ===== Analysis =====
 @st.cache_data
-def get_analysis(_model):
+def get_analysis(_model, use_demo: bool):
+    if use_demo:
+        return load_demo_case()
     if _model is None:
         return None
     return run_full_credit_pipeline(_model)
 
 
-analysis = get_analysis(model)
+analysis = get_analysis(effective_model, bool(st.session_state.use_demo))
 
 # Keep the controls visible and ready for future wiring.
 st.sidebar.caption(f"Selected scenario: {scenario}")
 st.sidebar.caption(f"Mid threshold ε: {eps:.2f}")
+if st.session_state.use_demo:
+    st.sidebar.success("Demo mode: using fixed case data (no model inference).")
+elif model is None:
+    st.sidebar.info("Upload a .pth model or load the demo case.")
+
+# ===== Demo strip (bank-friendly entry) =====
+st.markdown("## Demo: How PHL Explains a Loan Rejection Appeal")
+if st.session_state.use_demo and analysis is not None:
+    st.success("Demo case loaded")
+    st.caption(analysis.get("case_name", "Demo case"))
+else:
+    st.caption("Tip: click **Load German Credit Rejection Demo Case** in the sidebar for a stable walkthrough.")
 
 # ===== Tabs =====
 tabs = st.tabs(
@@ -136,19 +163,19 @@ tabs = st.tabs(
 )
 
 with tabs[0]:
-    render_overview(model)
+    render_overview(effective_model, analysis)
 
 with tabs[1]:
-    render_spectrum_tab(model, analysis)
+    render_spectrum_tab(effective_model, analysis)
 
 with tabs[2]:
-    render_boundary_tab(model, analysis)
+    render_boundary_tab(effective_model, analysis)
 
 with tabs[3]:
-    render_risk_tab(model, analysis)
+    render_risk_tab(effective_model, analysis)
 
 with tabs[4]:
-    render_demo_tab(model, analysis)
+    render_demo_tab(effective_model, analysis)
 
 # ===== Footer =====
 st.markdown("---")

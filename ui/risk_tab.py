@@ -6,7 +6,7 @@ from ui.pdf_export import generate_pdf_report
 def render_risk_tab(model, analysis):
     st.header("Risk Report")
 
-    if model is None or analysis is None:
+    if analysis is None:
         st.warning("No data available")
         return
 
@@ -20,7 +20,7 @@ def render_risk_tab(model, analysis):
         return
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Volatility (σ)", f"{float(sigma):.2f}")
+    col1.metric("Volatility (sigma)", f"{float(sigma):.2f}")
     col2.metric("Effective Rank", f"{float(r):.2f}")
     col3.metric("Concentration (SSI)", f"{float(ssi):.3f}")
     col4.metric("Risk Score", f"{float(risk):.3f}")
