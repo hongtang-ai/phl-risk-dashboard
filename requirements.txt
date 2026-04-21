@@ -1,0 +1,8 @@
+streamlit
+plotly
+fpdf2
+kaleido
+pandas
+numpy
+scikit-learn
+torch

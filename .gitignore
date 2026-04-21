@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+
+# 虚拟环境
+venv/
+.env
+
+# 数据 & 模型（必须忽略）
+*.pth
+*.pt
+*.pkl
+*.csv
+*.json
+data/
+models/
+results/
+plots/
+*.pdf
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
