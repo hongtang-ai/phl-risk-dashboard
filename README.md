@@ -88,32 +88,17 @@ This links decision uncertainty to logit scale and representation geometry.
 
 ---
 
-## Experiments (Optional)
-
-To run simulation experiments:
-
-```bash
-python main.py
-```
-
-Outputs:
-
-- results/results.json
-- plots/*.png
-
----
-
 ## Project Structure
 
 phl/
 ├── app.py                # Streamlit dashboard
 ├── ui/                   # UI modules
 ├── analysis/             # metrics & spectrum analysis
-├── data_loader.py
+├── analyzer.py           # PHL metrics (sigma / mid / r / SSI helpers)
+├── data_loader_credit.py # German Credit loader
+├── data_loader.py        # legacy MNIST loader (not used by dashboard)
 ├── model.py
-├── main.py               # experiments
-├── results/
-├── plots/
+├── report_generator.py   # optional reporting utilities
 
 ---
 
