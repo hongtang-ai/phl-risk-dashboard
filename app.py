@@ -1,7 +1,11 @@
-import streamlit as st
-import torch
+import sys
 from pathlib import Path
 from typing import Any
+
+import streamlit as st
+import torch
+
+sys.path.append(str(Path(__file__).parent))
 
 from analyzer import compute_effective_rank, compute_mid_fraction, compute_ssi, load_demo_case
 from data_loader_credit import load_german_credit_data
@@ -136,11 +140,14 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Demo")
 if st.sidebar.button("Load German Credit Rejection Demo Case"):
     st.session_state.use_demo = True
-    st.session_state.analysis = load_demo_case()
+    _demo = load_demo_case()
+    st.session_state.analysis = _demo
+    st.session_state["demo_data"] = _demo
     st.success("Demo case loaded")
 if st.sidebar.button("Clear Demo Case"):
     st.session_state.use_demo = False
     st.session_state.analysis = None
+    st.session_state.pop("demo_data", None)
 
 effective_model = None if st.session_state.use_demo else model
 
@@ -194,7 +201,7 @@ with tabs[3]:
     render_risk_tab(effective_model, analysis)
 
 with tabs[4]:
-    render_demo_tab(effective_model, analysis)
+    render_demo_tab()
 
 # ===== Footer =====
 st.markdown("---")

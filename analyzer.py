@@ -126,36 +126,55 @@ def spectrum_alpha_analyzer(results: list[dict[str, Any]]) -> dict[str, float]:
 
 
 def load_demo_case() -> dict[str, Any]:
-    """Returns a fixed demo analysis result for German Credit rejection case."""
-    eigvals = np.array([12.5, 4.2, 1.8, 0.9, 0.5, 0.3, 0.2, 0.1], dtype=float)
+    """Fixed German Credit rejection appeal demo: metrics + Plotly spectrum for UI/PDF."""
+    import plotly.graph_objects as go
+
+    eigvals = np.array([12.0, 4.2, 2.0, 1.0, 0.55, 0.3, 0.2, 0.1], dtype=float)
+    q = 0.48
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(len(eigvals))),
+            y=eigvals,
+            mode="lines+markers",
+        )
+    )
+    fig.update_layout(
+        title="Covariance Spectrum",
+        xaxis_title="Index",
+        yaxis_title="Eigenvalue (log scale)",
+        yaxis_type="log",
+    )
 
     return {
-        "case_name": "German Credit – Rejection Analysis",
-        "description": (
-            "Applicant requested a €5000 used car loan. "
-            "The model produced a probability of q = 0.48, placing the case near the decision boundary. "
-            "The application was subsequently rejected."
-        ),
+        "case_name": "German Credit - Rejection Case",
+        "q": q,
         "sigma": 6.23,
         "mid": 0.0075,
         "effective_rank": 3.12,
         "ssi": 0.42,
         "risk_score": 0.135,
         "risk_level": "MEDIUM",
+        "spectrum_fig": fig,
         "eigvals": eigvals.tolist(),
+        "description": (
+            f"Applicant applied for a €5000 used car loan. "
+            f"The model produced approval probability q = {q:.2f}, placing the case near the decision boundary. "
+            "The application was rejected."
+        ),
         "interpretation": (
-            "The model exhibits reduced representational capacity, with feature importance highly concentrated "
-            "in a few dominant directions. This creates a high-sensitivity zone near the decision boundary, "
-            "where small variations in applicant attributes may lead to inconsistent credit decisions."
+            "The model shows reduced representational capacity, resulting in high sensitivity near the decision boundary. "
+            "Small changes in applicant features may significantly alter approval outcomes, reducing decision consistency."
         ),
         "regulatory_note": (
-            "This analysis supports Adverse Action Explanation requirements and aligns with EU AI Act "
-            "expectations for high-risk credit scoring systems."
+            "This analysis supports Adverse Action Explanation and aligns with SR 11-7 model risk management expectations, "
+            "as well as EU AI Act requirements for high-risk credit decision systems."
         ),
         "recommendations": [
             "Trigger secondary human review for borderline applications (q ≈ 0.5).",
-            "Re-evaluate key features such as credit history, loan amount, and employment stability.",
+            "Re-assess key applicant attributes (credit history, loan amount, employment stability).",
             "Avoid fully automated decisions in high-sensitivity regions.",
-            "Continuously monitor structural indicators (effective rank and SSI) for model drift.",
+            "Integrate structural risk metrics into governance workflows.",
         ],
     }
