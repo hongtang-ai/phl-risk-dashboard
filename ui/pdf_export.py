@@ -5,26 +5,12 @@ import plotly.graph_objects as go
 
 
 def generate_pdf_report(analysis_results: dict):
-    """
-    Final PHL Credit Risk Report (MRM / EU AI Act aligned)
-
-    Structure:
-    1. Header
-    2. Executive Summary (Regulatory aligned)
-    3. Key Metrics (with Business Implication)
-    4. Spectrum Analysis + Caption
-    5. Structural Interpretation
-    6. Limitations
-    7. Recommended Actions (banking context)
-    8. Footer
-    """
-    # ===== 时间 =====
+    """Generate a finance-ready compliance-oriented PHL report."""
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y%m%d_%H%M")
     readable_time = now.strftime("%Y-%m-%d %H:%M")
     filename = f"phl_risk_report_{timestamp}.pdf"
 
-    # ===== 数据 =====
     sigma = float(analysis_results.get("sigma", 0) or 0)
     mid = float(analysis_results.get("mid", 0) or 0)
     r = float(analysis_results.get("effective_rank", 0) or 0)
@@ -32,18 +18,13 @@ def generate_pdf_report(analysis_results: dict):
     risk = float(analysis_results.get("risk_score", 0) or 0)
     eigvals = analysis_results.get("eigvals", [])
 
-    # ===== Risk Level =====
     if risk > 0.15:
         risk_level = "HIGH"
-        risk_color = (255, 0, 0)
     elif risk > 0.08:
         risk_level = "MEDIUM"
-        risk_color = (255, 140, 0)
     else:
         risk_level = "LOW"
-        risk_color = (0, 128, 0)
 
-    # ===== 图 =====
     img_bytes = None
     try:
         fig = go.Figure()
@@ -54,21 +35,19 @@ def generate_pdf_report(analysis_results: dict):
         img_bytes = None
 
     pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.set_margins(left=18, top=18, right=18)
     pdf.add_page()
 
-    # ===== Header =====
-    pdf.set_font("Arial", "B", 18)
-    pdf.cell(0, 12, "PHL Credit Risk Structure Diagnosis Report", ln=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "PHL Credit Risk Structure Diagnosis Report", ln=True)
+    pdf.set_font("Helvetica", "", 10)
     pdf.cell(0, 6, f"Generated at: {readable_time}", ln=True)
     pdf.cell(0, 6, "PHL Version: v1.0 (POC)", ln=True)
-    pdf.ln(6)
-    pdf.cell(0, 0, "", ln=True)
-    pdf.ln(4)
+    pdf.ln(3)
 
     if analysis_results.get("case_name"):
-        pdf.set_font("Arial", "I", 10)
+        pdf.set_font("Helvetica", "I", 10)
         pdf.cell(
             0,
             8,
@@ -77,144 +56,138 @@ def generate_pdf_report(analysis_results: dict):
         )
         pdf.ln(2)
 
-    # ===== Executive Summary（关键升级）=====
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Executive Summary", ln=True)
-    pdf.set_font("Arial", "", 11)
+    pdf.set_font("Helvetica", "", 10)
     pdf.multi_cell(
         0,
-        7,
-        "This report supports Adverse Action Explanation and EU AI Act high-risk AI system compliance "
-        "technical documentation for credit decision systems.\n\n",
+        6,
+        "This report provides a structural diagnosis to support Adverse Action Explanation and "
+        "EU AI Act high-risk AI system compliance for credit decisions.",
     )
-
-    # Risk Level 高亮块
     pdf.ln(2)
-    pdf.set_text_color(*risk_color)
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 9, f"[{risk_level} RISK]", ln=True)
-    pdf.set_text_color(0, 0, 0)
-    pdf.ln(1)
+    if risk_level == "MEDIUM":
+        pdf.multi_cell(
+            0,
+            6,
+            "A MEDIUM risk level indicates potential inconsistency in credit decisions, "
+            "particularly for borderline applications, which may increase appeal risk and regulatory scrutiny.",
+        )
+    else:
+        pdf.multi_cell(
+            0,
+            6,
+            f"A {risk_level} risk level indicates potential inconsistency in credit decisions, "
+            "particularly for borderline applications, which may increase appeal risk and regulatory scrutiny.",
+        )
 
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(
-        0,
-        7,
-        "The model shows potential instability in credit decision consistency, "
-        "particularly in high-sensitivity zones near the decision boundary, where small changes "
-        "in applicant information may lead to inconsistent or unfair outcomes.",
-    )
-    pdf.ln(3)
-    pdf.multi_cell(
-        0,
-        7,
-        "The rejection or risk assessment in this case is primarily driven by structural sensitivity "
-        "rather than clear separation in applicant features.",
-    )
-    pdf.ln(6)
-    pdf.cell(0, 0, "", ln=True)
-    pdf.ln(4)
+    pdf.ln(2)
+    if risk_level == "MEDIUM":
+        pdf.set_text_color(255, 140, 0)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 10, "[MEDIUM RISK]", ln=True)
+        pdf.set_text_color(0, 0, 0)
+    else:
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 10, f"[{risk_level} RISK]", ln=True)
+    pdf.ln(2)
 
-    # ===== Key Metrics =====
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Key Metrics", ln=True)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.cell(60, 8, "Metric", border=1)
+    pdf.cell(40, 8, "Value", border=1)
+    pdf.cell(90, 8, "Business Implication", border=1, ln=True)
 
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(55, 8, "Metric", 1)
-    pdf.cell(35, 8, "Value", 1)
-    pdf.cell(90, 8, "Business Implication", 1, ln=True)
-
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("Helvetica", "", 10)
     rows = [
         ("Volatility (sigma)", f"{sigma:.4f}", "Output variability in risk scoring"),
         ("Mid-density", f"{mid:.4f}", "Decision boundary uncertainty density"),
-        ("Effective Rank", f"{r:.2f}", "Model representational capacity"),
+        (
+            "Effective Rank",
+            f"{r:.2f}",
+            "Reduced model representational capacity, leading to higher sensitivity at decision boundary",
+        ),
         ("SSI", f"{ssi:.4f}", "Internal feature concentration level"),
         ("Risk Score", f"{risk:.4f}", "Overall structural instability risk"),
     ]
-    for metric, value, desc in rows:
-        pdf.cell(55, 8, metric, 1)
-        pdf.cell(35, 8, value, 1)
-        pdf.cell(100, 8, desc, 1, ln=True)
-    pdf.ln(6)
-    pdf.cell(0, 0, "", ln=True)
-    pdf.ln(4)
+    for metric, value, implication in rows:
+        pdf.cell(60, 8, metric, border=1, align="L")
+        pdf.cell(40, 8, value, border=1, align="C")
+        pdf.cell(90, 8, implication, border=1, ln=True, align="L")
 
-    # ===== Spectrum =====
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 8, "Covariance Spectrum Analysis", ln=True)
-
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Covariance Spectrum Sharpening", ln=True)
     if img_bytes:
         try:
-            pdf.image(io.BytesIO(img_bytes), x=20, w=170)
+            pdf.image(io.BytesIO(img_bytes), w=175)
         except Exception:
+            pdf.set_font("Helvetica", "", 10)
             pdf.cell(0, 6, "Spectrum image unavailable", ln=True)
     else:
+        pdf.set_font("Helvetica", "", 10)
         pdf.cell(0, 6, "Spectrum image unavailable", ln=True)
-    pdf.ln(4)
 
-    pdf.set_font("Arial", "I", 9)
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "", 10)
     pdf.multi_cell(
         0,
-        5,
-        "Figure: Spectrum decay reflects internal feature concentration. "
-        "Sharper decay indicates increased reliance on a limited set of internal representations, "
-        "which may increase decision sensitivity.",
+        6,
+        "Spectrum sharpening indicates internal feature concentration, increasing sensitivity near the decision boundary.",
     )
-    pdf.ln(6)
-    pdf.cell(0, 0, "", ln=True)
-    pdf.ln(4)
 
-    # ===== Structural =====
-    pdf.set_font("Arial", "B", 14)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Structural Interpretation", ln=True)
-    pdf.set_font("Arial", "", 11)
+    pdf.set_font("Helvetica", "", 10)
     pdf.multi_cell(
         0,
-        7,
-        "The model shows internal feature concentration and reduced representational capacity. "
-        "This results in a high-sensitivity zone near the decision boundary, where small changes in "
-        "applicant information may significantly alter approval outcomes.",
+        6,
+        "The model exhibits reduced model representational capacity, leading to higher sensitivity at decision boundary. "
+        "This forms a high-sensitivity zone near the decision boundary, where small changes in applicant features may lead "
+        "to inconsistent approval outcomes.",
     )
-    pdf.ln(6)
-    pdf.cell(0, 0, "", ln=True)
-    pdf.ln(4)
 
-    # ===== Limitations =====
-    pdf.set_font("Arial", "B", 14)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Limitations", ln=True)
-
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("Helvetica", "", 10)
     pdf.multi_cell(
         0,
         6,
-        "This analysis is based on an experimental structural diagnostic framework and "
-        "should not be used as the sole basis for automated decision-making. "
-        "It must be combined with traditional credit risk models and human review processes.",
+        "This analysis is based on an experimental structural diagnostic framework and should not be used as the sole "
+        "basis for automated decision-making. It must be combined with traditional credit risk models and human review processes.",
     )
-    pdf.ln(6)
-    pdf.cell(0, 0, "", ln=True)
-    pdf.ln(4)
 
-    # ===== Actions =====
-    pdf.set_font("Arial", "B", 14)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Recommended Actions", ln=True)
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("Helvetica", "", 10)
     pdf.multi_cell(
         0,
         6,
-        "- For applications with predicted probability near 0.5, trigger secondary human review process\n"
+        "- For applications with probability near 0.5, trigger secondary human review process\n"
+        "- Re-evaluate key input factors (credit history, loan amount, employment stability)\n"
         "- Avoid fully automated decisions in high-sensitivity regions\n"
         "- Integrate structural risk score into model governance workflow\n"
         "- Implement human oversight for critical decision paths\n"
-        "- Monitor model structure post-deployment for drift and instability\n"
-        "- For high-risk or borderline cases, decisions should not rely solely on automated model outputs.",
+        "- Monitor model structure post-deployment for drift and instability",
     )
-    pdf.ln(5)
 
-    # ===== 页脚 =====
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Alignment with Regulatory Requirements", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.multi_cell(
+        0,
+        6,
+        "This report supports model risk management expectations under SR 11-7, "
+        "Adverse Action Explanation requirements, and EU AI Act technical documentation for high-risk AI systems.",
+    )
+
     pdf.set_y(-20)
-    pdf.set_font("Arial", "I", 8)
+    pdf.set_font("Helvetica", "I", 8)
     pdf.cell(
         0,
         6,
@@ -222,10 +195,6 @@ def generate_pdf_report(analysis_results: dict):
         align="C",
     )
 
-    # ===== 输出 =====
     raw = pdf.output(dest="S")
-    if isinstance(raw, str):
-        pdf_bytes = raw.encode("latin1")
-    else:
-        pdf_bytes = bytes(raw)
+    pdf_bytes = raw.encode("latin1") if isinstance(raw, str) else bytes(raw)
     return filename, pdf_bytes
