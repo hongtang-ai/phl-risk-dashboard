@@ -15,6 +15,8 @@ st.set_page_config(page_title="PHL Risk Dashboard", layout="wide")
 
 if "use_demo" not in st.session_state:
     st.session_state.use_demo = False
+if "analysis" not in st.session_state:
+    st.session_state.analysis = None
 
 
 def run_credit_rejection_analysis(model: torch.nn.Module, dataloader) -> dict[str, Any]:
@@ -134,8 +136,11 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Demo")
 if st.sidebar.button("Load German Credit Rejection Demo Case"):
     st.session_state.use_demo = True
+    st.session_state.analysis = load_demo_case()
+    st.success("Demo case loaded")
 if st.sidebar.button("Clear Demo Case"):
     st.session_state.use_demo = False
+    st.session_state.analysis = None
 
 effective_model = None if st.session_state.use_demo else model
 
@@ -149,7 +154,11 @@ def get_analysis(_model, use_demo: bool):
     return run_full_credit_pipeline(_model)
 
 
-analysis = get_analysis(effective_model, bool(st.session_state.use_demo))
+if st.session_state.get("use_demo", False):
+    analysis = st.session_state.analysis or load_demo_case()
+    st.session_state.analysis = analysis
+else:
+    analysis = get_analysis(effective_model, False)
 
 # Keep the controls visible and ready for future wiring.
 st.sidebar.caption(f"Selected scenario: {scenario}")
