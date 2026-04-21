@@ -2,18 +2,19 @@
 
 Structure-aware model risk diagnostics for credit decision systems.
 
-This project implements the Projection Density Law (PHL) framework and provides:
-
-- Interactive Streamlit Dashboard
-- Automated PDF Risk Report (MRM-style)
-- Structural explanation of model decisions
-- Credit risk scenario demo (German Credit)
+This project implements the Projection Density Law (PHL) framework and provides a practical tool for analyzing decision boundary sensitivity and structural instability in neural network models.
 
 ---
 
-## Demo (Recommended)
+## Live Demo
 
-Run the dashboard locally:
+Open the deployed dashboard:
+
+https://phl-risk-dashboard-rngrymxad3purafnszxkax.streamlit.app/
+
+---
+
+## Run Locally
 
 ```bash
 streamlit run app.py
@@ -27,46 +28,72 @@ http://localhost:8501
 
 ## What This Project Does
 
-This tool analyzes neural network decision behavior using:
+This dashboard analyzes model behavior beyond traditional feature importance by focusing on decision structure:
 
-- Logit scale (sigma)
-- Decision boundary density (mid)
-- Representation structure (effective rank r)
-- Spectrum concentration (SSI)
+- Logit scale (sigma) → output volatility
+- Mid-density (mid) → decision boundary uncertainty
+- Effective rank (r) → representation capacity
+- Spectrum Sharpening Index (SSI) → feature concentration risk
 
 It helps answer:
 
-Why is a model decision unstable or sensitive?
+Why is a model decision unstable or sensitive near approval thresholds?
 
 ---
 
 ## Use Case: Credit Risk Explanation
 
-In credit approval scenarios:
+Designed for bank Model Risk Management (MRM) and compliance teams.
+
+Typical scenarios:
 
 - Borderline applications (q ~ 0.5)
-- Rejected samples
+- Loan rejections requiring explanation
 - High-sensitivity decision regions
 
 PHL provides:
 
-- Structural explanation (not just feature attribution)
-- Risk diagnostics (PDF report)
-- Support for:
-  - Adverse Action Explanation
-  - EU AI Act high-risk system documentation
+- Structural explanation (beyond feature attribution)
+- Model risk diagnostics
+- Automated PDF reporting
+
+Supports:
+
+- Adverse Action Explanation
+- EU AI Act (high-risk AI system documentation)
+
+---
+
+## Demo Scenario (German Credit)
+
+Includes a built-in interactive demo (no model training required):
+
+German Credit – Rejection Analysis
+
+- Applicant requests €5000 loan
+- Model output: q = 0.48 (near decision boundary)
+- Decision: Rejected
+
+PHL reveals:
+
+- Reduced effective rank → limited representation capacity
+- Spectrum sharpening → feature concentration
+- High-sensitivity zone near decision boundary
+
+Small changes in applicant features may significantly affect outcomes.
 
 ---
 
 ## PDF Report Output
 
-The system generates a professional report including:
+Generates a professional MRM-style risk report including:
 
 - Executive Summary (Risk Level)
 - Key Metrics (sigma, mid, rank, SSI)
 - Spectrum Analysis
 - Structural Interpretation
-- Recommended Actions (MRM-style)
+- Recommended Actions
+- Compliance-oriented explanation
 
 ---
 
@@ -76,7 +103,7 @@ We study the projection:
 
 z = w^T h
 
-and define:
+Define:
 
 mid = P(|q - 0.5| <= eps)
 
@@ -90,42 +117,55 @@ This links decision uncertainty to logit scale and representation geometry.
 
 ## Project Structure
 
-phl/
-├── app.py                # Streamlit dashboard
-├── ui/                   # UI modules
-├── analyzer.py           # PHL metrics (sigma / mid / r / SSI helpers)
-├── data_loader_credit.py # German Credit loader
-├── model.py              # reference MLP definition (optional; uploads may use other checkpoints)
+phl-risk-dashboard/
+
+- `app.py` — Streamlit entry point
+- `ui/` — Dashboard UI modules
+- `analyzer.py` — Core PHL metrics
+- `data_loader_credit.py` — German Credit dataset loader
+- `model.py` — Reference MLP (optional)
 
 ---
 
-## Requirements
-
-Install dependencies:
+## Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Main libraries:
+Main dependencies:
 
 - streamlit
 - torch
 - plotly
 - fpdf2
 - kaleido
+- scikit-learn
+- pandas
 
 ---
 
-## Notes
+## Important Notes
 
 - This is a research prototype (POC)
 - Not intended as a standalone decision system
-- Should be used with human oversight
+- Should be used with human oversight and existing governance frameworks
+
+---
+
+## Positioning
+
+This is not a feature importance tool.
+
+It introduces **structure-aware model risk diagnostics**, focusing on:
+
+- Decision boundary behavior
+- Representation collapse
+- Structural instability
 
 ---
 
 ## Author
 
-Independent Researcher
-Focus: Structure-aware XAI / Model Risk
+Independent Researcher  
+Focus: Structure-aware XAI / Model Risk / AI Governance
