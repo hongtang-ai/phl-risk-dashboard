@@ -23,7 +23,9 @@ def load_german_credit_data(batch_size: int = 128) -> Tuple[DataLoader, DataLoad
         "https://archive.ics.uci.edu/ml/"
         "machine-learning-databases/statlog/german/german.data-numeric"
     )
-    data = pd.read_csv(url, sep=" ", header=None)
+    # UCI 该文件在不同镜像/版本下可能出现“多空格/对齐不一致”。
+    # 使用正则空白分隔 + python 引擎，避免固定单空格分隔导致的解析失败。
+    data = pd.read_csv(url, sep=r"\s+", header=None, engine="python")
 
     x = data.iloc[:, :-1].values
     y = data.iloc[:, -1].values
