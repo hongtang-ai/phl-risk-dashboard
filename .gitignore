@@ -1,26 +1,28 @@
-# Python
 pycache/
 __pycache__/
 *.pyc
-
-# Virtual env
 venv/
 .env
 
-# Data & models
+# 数据
+data/
+results/
+plots/
+
+# 模型
 *.pth
 *.pt
 *.pkl
-*.csv
-*.json
-data/
 models/
-results/
-plots/
-*.pdf
 
-# Streamlit secrets
+# 输出
+*.json
+*.png
+!assets/
+!assets/*.png
+
+# streamlit
 .streamlit/secrets.toml
 
-# OS
+# 系统
 .DS_Store
