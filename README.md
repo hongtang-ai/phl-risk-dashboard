@@ -97,6 +97,60 @@ Generates a professional MRM-style risk report including:
 
 ---
 
+## PHL PDF Risk Report – Final Enhancement (MRM-ready POC)
+
+This update upgrades the PHL PDF report to a professional, compliance-aligned format suitable for bank Model Risk Management (MRM) teams and regulatory audits.
+
+### Key Improvements
+
+1. Executive Summary (Business + Regulatory Focus)
+
+- Added a strong regulatory-aligned opening referencing Adverse Action Explanation and EU AI Act high-risk AI systems.
+- Explicitly interprets MEDIUM RISK in business terms: potential inconsistency in credit decisions and increased risk of appeals/regulatory scrutiny.
+
+2. Financial Language Standardization
+
+Translated technical terms into clear, business-oriented language:
+
+- “Reduced model representational capacity, leading to higher sensitivity at decision boundary”
+- “High-sensitivity zone near the decision boundary, where small changes in applicant features may lead to inconsistent approval outcomes”
+- Recommendations rewritten as actionable banking procedures.
+
+3. Visual and Layout Improvements
+
+- Increased spacing and margins for better readability.
+- Risk Level (MEDIUM) visually emphasized using professional color palettes.
+- Key Metrics table redesigned with structured borders and audit-style alignment.
+- Spectrum chart enlarged, centered, and given a clear business-oriented caption explaining spectrum sharpening.
+
+4. Regulatory Alignment Section (New)
+
+- Added dedicated section: “Alignment with Regulatory Requirements”
+- Covers SR 11-7 Model Risk Management expectations, Adverse Action Explanation requirements, and EU AI Act technical documentation standards.
+
+5. Compliance-safe Design
+
+- No changes to core PHL metrics or computation logic.
+- Maintains the fpdf2 + kaleido pipeline for high-quality PDF generation.
+- Output remains fully compatible with Streamlit `download_button` (returns bytes).
+
+### Result
+
+The PHL PDF Risk Report is now positioned as:
+
+A decision stability and structural risk explanation document for credit model governance.
+
+Suitable for:
+
+- Model validation and independent challenge
+- Internal audit discussions
+- Regulatory technical documentation support
+- Loan rejection appeal explanations
+
+This version makes the report MRM-ready — professional enough for bank risk and compliance teams while clearly highlighting the unique value of PHL’s spectrum-based structural diagnosis.
+
+---
+
 ## Core Idea (Simplified)
 
 We study the projection:
