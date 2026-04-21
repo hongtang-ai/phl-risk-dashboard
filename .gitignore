@@ -2,11 +2,11 @@
 __pycache__/
 *.pyc
 
-# 虚拟环境
+# Virtual env
 venv/
 .env
 
-# 数据 & 模型（必须忽略）
+# Data & models
 *.pth
 *.pt
 *.pkl
