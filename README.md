@@ -93,12 +93,9 @@ This links decision uncertainty to logit scale and representation geometry.
 phl/
 ├── app.py                # Streamlit dashboard
 ├── ui/                   # UI modules
-├── analysis/             # metrics & spectrum analysis
 ├── analyzer.py           # PHL metrics (sigma / mid / r / SSI helpers)
 ├── data_loader_credit.py # German Credit loader
-├── data_loader.py        # legacy MNIST loader (not used by dashboard)
-├── model.py
-├── report_generator.py   # optional reporting utilities
+├── model.py              # reference MLP definition (optional; uploads may use other checkpoints)
 
 ---
 
