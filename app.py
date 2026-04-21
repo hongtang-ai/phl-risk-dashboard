@@ -13,6 +13,9 @@ from ui.demo_tab import render_demo_tab
 
 st.set_page_config(page_title="PHL Risk Dashboard", layout="wide")
 
+if "use_demo" not in st.session_state:
+    st.session_state.use_demo = False
+
 
 def run_credit_rejection_analysis(model: torch.nn.Module, dataloader) -> dict[str, Any]:
     """
@@ -98,15 +101,22 @@ with col2:
     st.title("PHL Risk Diagnostics Dashboard")
     st.caption("Structure-aware model risk analysis for credit decisions")
 
+if st.session_state.get("use_demo", False):
+    st.warning(
+        "You are viewing a pre-configured demonstration case. "
+        "Results do not reflect real-time model inference."
+    )
+
 # ===== Sidebar =====
 st.sidebar.header("Configuration")
 
-model_file = st.sidebar.file_uploader("Upload Model (.pth)", type=["pth"])
+if st.session_state.get("use_demo", False):
+    st.sidebar.info("Demo mode active: model upload disabled")
+    model_file = None
+else:
+    model_file = st.sidebar.file_uploader("Upload Model (.pth)", type=["pth"])
 scenario = st.sidebar.selectbox("Scenario", ["German Credit - Rejection Analysis"])
 eps = st.sidebar.slider("Mid Threshold ε", 0.01, 0.1, 0.05)
-
-if "use_demo" not in st.session_state:
-    st.session_state.use_demo = False
 
 
 # ===== Load Model =====

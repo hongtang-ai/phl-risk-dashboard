@@ -67,6 +67,16 @@ def generate_pdf_report(analysis_results: dict):
     pdf.cell(0, 0, "", ln=True)
     pdf.ln(4)
 
+    if analysis_results.get("case_name"):
+        pdf.set_font("Arial", "I", 10)
+        pdf.cell(
+            0,
+            8,
+            "Demo Case: Pre-configured analysis (not real-time model output)",
+            ln=True,
+        )
+        pdf.ln(2)
+
     # ===== Executive Summary（关键升级）=====
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 8, "Executive Summary", ln=True)
