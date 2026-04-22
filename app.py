@@ -134,58 +134,30 @@ elif mode in ("demo", "simple_input"):
     st.markdown("")
     st.markdown(
         """
-Have you ever felt like a system made a decision about you,  
-but never really told you why?
+My friend Mike got rejected by the AI - just like that.
 
----
+Mike is 31, works as a warehouse supervisor in Ohio, and has two kids.  
+His old car broke down, so he applied for a $9,500 used car loan  
+to get his kids to school and back.
 
-This is exactly what happened to my friend Mike.
-
-Mike is 31, works as a warehouse supervisor in Ohio, and has two kids.
-
-His car broke down recently, so he applied for a $9,500 used car loan,  
-just to keep daily life moving.
-
-The system rejected him instantly.
-
-Approval probability: 0.48  
+The system rejected him instantly with only 0.48 approval probability.  
 No real explanation.
 
-He called me upset and said:
+He called me frustrated:  
+"Why did the AI just shut me down like that? I didn't even get a chance?"
 
-“My credit is not even that bad, so why did it shut me down?  
-Feels like I never even got a chance.”
+When I ran his case through this tool, it showed his application landed right on the model's high-sensitivity decision boundary.  
+The internal representation was collapsing, making the decision extremely sensitive to small changes.
 
----
+The tool suggested: Trigger a secondary human review.
 
-So we ran his case through this tool.
+Mike later submitted additional documents.  
+After human review, the loan was approved.
 
-What we found was pretty clear:
+He told me afterward:  
+"Luckily someone actually looked at it. Otherwise I would have been completely blocked by the AI."
 
-- He landed right near the model's decision boundary  
-- The model was highly sensitive in that region  
-- The internal representation was unstable  
-
-That means even a small change in income or credit history  
-could completely flip the outcome.
-
----
-
-The recommendation was simple:  
-this should not be a fully automated decision.
-
-Mike added a bit more documentation, and a human reviewed it.
-
-The loan was approved.
-
-Later he told me:
-
-“If nobody looked at it again, I would've just been blocked by AI.  
-That's the scary part.”
-
----
-
-This is a demo scenario. Actual analysis depends on your data.
+This is a demonstration case. Actual analysis depends on your data.
 """
     )
 

@@ -49,66 +49,28 @@ def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
     st.markdown("")
     st.markdown(
         """
-If you work in model risk or compliance, this probably feels very familiar.
+Last week, our compliance officer Sarah dealt with a tough case.  
+A customer applied for a $9,500 used car loan and was automatically rejected by the model.
 
----
+The customer called, clearly upset:  
+"I provided all the information. Why did the system just reject me without any real answer?"
 
-Sarah is a compliance officer at a bank.  
-She told me, “I deal with this kind of call almost every week.”
+Sarah was under pressure - we need to provide clear explanations for regulatory compliance.
 
-Last week, a customer filed a complaint:
+She ran the case through this PHL tool.  
+It revealed the application was sitting right on the decision boundary,  
+where the model's internal representation collapses and becomes highly sensitive.
 
-He applied for a $9,500 used car loan, and the system rejected him automatically.
+The tool gave a MEDIUM risk score and recommended a secondary human review.
 
-On the phone he said:  
-“I gave you everything. Why was I rejected? At least tell me why.”
+Sarah was able to generate a structured report quickly  
+that satisfied both the customer and regulatory requirements.
 
----
+She later said:  
+"This tool doesn't just tell me which features matter - it shows me where the model itself becomes unstable.  
+That's what makes this useful for compliance."
 
-Now the pressure was on Sarah.
-
-Under regulation,  
-she cannot just say “the model decided.”
-
-She needs something explainable, documentable, and auditable.
-
----
-
-She ran the case through PHL.
-
-Here is what stood out:
-
-- The application sat right at the decision boundary  
-- The model showed high sensitivity  
-- The internal representation was compressed (low effective rank)  
-- The spectrum showed strong feature concentration  
-
----
-
-What the tool gave her was more than a score:
-
-- A clear risk signal: MEDIUM risk
-- A concrete action: trigger human review
-- A structured explanation she could document
-
----
-
-That helped her do two things immediately:
-
-1. Respond clearly to the customer  
-2. Meet internal audit and regulatory expectations  
-
----
-
-Sarah later said:
-
-“What matters is not just which feature matters.  
-It's knowing when the model itself becomes unstable.  
-That's what makes this usable for compliance.”
-
----
-
-This is a demo scenario. Actual analysis depends on your data.
+This is a demonstration case. Actual analysis depends on your data.
 """
     )
 
