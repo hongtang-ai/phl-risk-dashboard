@@ -26,14 +26,14 @@ def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
         )
 
     if use_demo:
-        st.markdown("### 📘 Case Background")
+        st.markdown("### Case Background")
         st.info(
             "Demo Case: 张伟（31岁）申请 €5000 二手车贷款，信用分 60 分。"
             "模型输出概率 q = 0.48，处于决策边界附近，被自动拒绝。"
         )
 
     if use_demo:
-        st.markdown("### 📊 Key Risk Metrics")
+        st.markdown("### Key Risk Metrics")
         col1, col2, col3 = st.columns(3)
         col1.metric("Volatility (σ)", "6.23")
         col2.metric("Mid-density", "0.0075")
@@ -43,40 +43,66 @@ def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
         col5.metric("Risk Score", "0.135 (MEDIUM)")
 
     st.markdown("---")
-    st.markdown("### 🏦 Bank Compliance Use Case")
+    st.markdown("### Bank Compliance Use Case")
     st.markdown(
         """
-“This is exactly the kind of case Sarah deals with every week.”
+If you work in model risk or compliance, this probably feels familiar.
 
-Last week, the bank received a complaint:
+---
 
-A customer (Mike) was automatically rejected for a $9,500 used car loan.
+“This is exactly the kind of case Sarah deals with.”
+
+Last week, a customer filed a complaint:
+
+He applied for a $9,500 used car loan.  
+The system rejected him automatically.
 
 On the phone, he was clearly upset:  
-“I submitted everything. Why was I rejected? At least tell me why.”
+“I gave you everything.  
+Why was I rejected? At least tell me why.”
+
+---
 
 Sarah, a compliance officer, now had to answer.
 
-And under regulations, she cannot just say “the model said so.”
+And under regulation,  
+she cannot just say “the model decided.”
+
+She needs something explainable.
+
+---
 
 She ran the case through PHL.
 
-What she found:
-- The application sat right at the decision boundary
-- The model showed high sensitivity
-- Internal representation had collapsed (low effective rank)
-- Spectrum showed strong feature concentration
+Here is what stood out:
 
-👉 Risk level: MEDIUM  
-👉 Recommendation: Trigger human review
+- The application sits right at the decision boundary  
+- The model shows high sensitivity  
+- Internal representation is compressed (low effective rank)  
+- Spectrum indicates strong feature concentration  
 
-The tool generated a structured explanation she could:
-- Send to the customer
-- Use for audit / regulatory documentation
+---
 
-Later she told me:
+What the tool provided:
 
-“What matters is not just which feature matters — it is knowing when the model itself becomes unstable. That's what makes this usable for compliance.”
+- A clear risk signal: MEDIUM risk
+- A concrete action: trigger human review
+- A structured explanation she could document
+
+---
+
+This helped her do two things:
+
+1. Respond clearly to the customer  
+2. Satisfy internal and regulatory expectations  
+
+---
+
+She later said:
+
+“What matters is not just which feature matters.  
+It's knowing when the model itself becomes unstable.  
+That's what makes this usable.”
 
 ---
 

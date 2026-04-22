@@ -128,37 +128,60 @@ elif mode in ("demo", "simple_input"):
     st.info("This is a simplified demonstration, not real model output")
 
     st.markdown("---")
-    st.markdown("### 💬 A real situation this reminds me of...")
+    st.markdown("### A situation this might remind you of")
     st.markdown(
         """
-“My friend Mike got rejected by AI... just like that.”
+Have you ever felt like a system made a decision about you...  
+but never really explained why?
+
+Here is a real kind of situation.
+
+---
+
+“My friend Mike got rejected by AI — just like that.”
 
 Mike is 31, works as a warehouse supervisor in Ohio, and has two kids.
 
-His old car broke down, so he applied for a $9,500 used car loan — just to get his kids to school and back.
+His car broke down recently, so he applied for a $9,500 used car loan —  
+just to keep daily life running.
 
 The system rejected him instantly.
 
-Approval probability: 0.48.  
+Approval probability: 0.48  
 No real explanation.
 
-He called me frustrated:  
-“Man, my credit is not even that bad... why did AI just shut me down like that? Feels like I did not even get a chance.”
+He called me and said:
 
-So I ran his case through this tool.
+“I don't have terrible credit... so why did the system just shut me down?  
+Feels like I didn't even get a chance.”
 
-Turns out — he landed right in the model's high-sensitivity boundary zone.
+---
 
-Internally, the model's representation was unstable.  
-A tiny change in income or credit history could flip the decision completely.
+So we ran his case through this tool.
 
-👉 The tool suggested: this case should be manually reviewed.
+What we found was interesting:
 
-Mike added a bit more documentation.  
-After human review, the loan was approved.
+- He landed right near the model's decision boundary  
+- The model was highly sensitive in that region  
+- Internally, the representation was unstable  
+
+That means small changes — income, credit history —  
+could completely flip the outcome.
+
+---
+
+The recommendation was simple:  
+This case should not be fully automated.
+
+So he added a bit more documentation.  
+A human reviewed it.
+
+The loan got approved.
 
 Later he told me:  
-“Honestly, if no one looked twice... I would have been stuck. AI would have just blocked me.”
+
+“If nobody looked at it again, I would've just been rejected by AI.  
+That's the scary part.”
 
 ---
 
@@ -168,11 +191,7 @@ This is a demo scenario. Actual analysis depends on your data.
 
     st.markdown("---")
 
-    if st.button(
-        "🔍 View Full Structural Risk Analysis",
-        key="btn_open_workbench",
-        width="stretch",
-    ):
+    if st.button("View Full Structural Risk Analysis", key="btn_open_workbench", width="stretch"):
         if st.session_state.get("analysis") is None:
             st.session_state.analysis = load_demo_case()
             st.session_state.use_demo = True
@@ -186,4 +205,13 @@ if mode in ("csv", "model") or st.session_state.get("show_workbench"):
     render_professional_workbench(st.session_state.get("analysis"))
 
 st.markdown("---")
-st.caption("Developed by Independent Researcher | Focus on Structured XAI")
+st.markdown(
+    """
+### Feedback & Collaboration
+
+Have questions or want to try PHL with your own data?
+
+Reach out to the independent researcher via GitHub:  
+https://github.com/hongtang-ai
+"""
+)
