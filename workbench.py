@@ -43,47 +43,46 @@ def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
         col5.metric("Risk Score", "0.135 (MEDIUM)")
 
     st.markdown("---")
-    st.markdown("### Bank Compliance Use Case")
+    st.markdown("### 银行合规团队真实案例")
     st.markdown(
         """
-If you work in model risk or compliance, this probably feels familiar.
+如果你做过模型风险或合规，这个场景基本都会遇到。
 
 ---
 
-“This is exactly the kind of case Sarah deals with.”
+Sarah 是一家银行的合规负责人。  
+她说：“这种电话，我几乎每周都要接。”
 
-Last week, a customer filed a complaint:
+上周，一位客户来投诉：
 
-He applied for a $9,500 used car loan.  
-The system rejected him automatically.
+申请 $9,500 二手车贷款，系统自动拒绝。
 
-On the phone, he was clearly upset:  
-“I gave you everything.  
-Why was I rejected? At least tell me why.”
+客户在电话里很激动：  
+“材料我都交了，为什么拒我？至少告诉我原因吧。”
 
 ---
 
-Sarah, a compliance officer, now had to answer.
+这时压力就落在 Sarah 身上了。
 
-And under regulation,  
-she cannot just say “the model decided.”
+按监管要求，  
+她不能只说“模型就是这么判的”。
 
-She needs something explainable.
+她必须给出可解释、可记录、可复核的说明。
 
 ---
 
 She ran the case through PHL.
 
-Here is what stood out:
+结果很清楚：
 
-- The application sits right at the decision boundary  
-- The model shows high sensitivity  
-- Internal representation is compressed (low effective rank)  
-- Spectrum indicates strong feature concentration  
+- 申请样本正好卡在决策边界  
+- 模型在该区域敏感度偏高  
+- 内部表示压缩（effective rank 低）  
+- 谱特征集中度明显偏高  
 
 ---
 
-What the tool provided:
+工具给她的，不只是一个分数：
 
 - A clear risk signal: MEDIUM risk
 - A concrete action: trigger human review
@@ -91,18 +90,18 @@ What the tool provided:
 
 ---
 
-This helped her do two things:
+这直接帮她完成两件事：
 
-1. Respond clearly to the customer  
-2. Satisfy internal and regulatory expectations  
+1. 给客户一个说得清的回复  
+2. 给审计和监管留下一份结构化记录  
 
 ---
 
-She later said:
+后来 Sarah 说：
 
-“What matters is not just which feature matters.  
-It's knowing when the model itself becomes unstable.  
-That's what makes this usable.”
+“真正有用的，不只是知道哪个特征重要。  
+而是知道模型什么时候开始不稳定。  
+这才是合规团队能落地用起来的关键。”
 
 ---
 

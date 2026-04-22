@@ -128,60 +128,59 @@ elif mode in ("demo", "simple_input"):
     st.info("This is a simplified demonstration, not real model output")
 
     st.markdown("---")
-    st.markdown("### A situation this might remind you of")
+    st.markdown("### 普通用户真实故事")
     st.markdown(
         """
-Have you ever felt like a system made a decision about you...  
-but never really explained why?
+你有没有过这种感觉：
 
-Here is a real kind of situation.
+系统已经替你做了决定，  
+但你根本不知道“为什么”。
 
 ---
 
-“My friend Mike got rejected by AI — just like that.”
+我朋友 Mike 上次就遇到了这件事。
 
-Mike is 31, works as a warehouse supervisor in Ohio, and has two kids.
+Mike 31 岁，在 Ohio 做仓库主管，有两个孩子。
 
-His car broke down recently, so he applied for a $9,500 used car loan —  
-just to keep daily life running.
+前阵子车坏了，他申请了一笔 $9,500 的二手车贷款，  
+只是为了把家里的日常先撑住。
 
-The system rejected him instantly.
+结果系统秒拒。
 
 Approval probability: 0.48  
 No real explanation.
 
-He called me and said:
+他打电话时特别沮丧：
 
-“I don't have terrible credit... so why did the system just shut me down?  
-Feels like I didn't even get a chance.”
-
----
-
-So we ran his case through this tool.
-
-What we found was interesting:
-
-- He landed right near the model's decision boundary  
-- The model was highly sensitive in that region  
-- Internally, the representation was unstable  
-
-That means small changes — income, credit history —  
-could completely flip the outcome.
+“我信用也不算差，为什么系统直接把我拒了？  
+我连解释机会都没有。”
 
 ---
 
-The recommendation was simple:  
-This case should not be fully automated.
+我们就把他的案例放进这个工具里看。
 
-So he added a bit more documentation.  
-A human reviewed it.
+很快就发现：
 
-The loan got approved.
+- 他正好落在模型决策边界附近  
+- 这个区域模型特别敏感  
+- 内部表示也不稳定  
 
-Later he told me:  
+也就是说，收入或征信哪怕只动一点点，  
+结论都可能直接翻转。
 
-“If nobody looked at it again, I would've just been rejected by AI.  
-That's the scary part.”
+---
+
+系统给的建议很直接：  
+这个案例不该全自动处理，应该有人复核。
+
+后来 Mike 补了几份材料，进入人工复核。
+
+贷款最终通过了。
+
+他后来说了一句很真实的话：
+
+“要是没人再看一眼，我可能就被 AI 永久卡住了。  
+最可怕的是，我连发生了什么都不知道。”
 
 ---
 
@@ -209,7 +208,7 @@ st.markdown(
     """
 ### Feedback & Collaboration
 
-Have questions or want to try PHL with your own data?
+Have questions? Want to try PHL with your own data or discuss a collaboration?
 
 Reach out to the independent researcher via GitHub:  
 https://github.com/hongtang-ai
