@@ -12,8 +12,10 @@ from workbench import render_professional_workbench
 
 st.set_page_config(page_title="PHL Risk Dashboard", layout="wide")
 
-st.title("PHL Risk Diagnostics Dashboard")
-st.caption("Structure-aware model risk analysis for credit decisions")
+st.title("Credit Decision Boundary Analyzer")
+st.caption(
+    "Understand why AI approves or rejects loans at the critical edge — Structural insights for better, fairer credit decisions"
+)
 
 # ----- session_state 初始化 -----
 if "mode" not in st.session_state:
@@ -129,6 +131,7 @@ elif mode in ("demo", "simple_input"):
 
     st.markdown("---")
     st.markdown("### A real story from an everyday user")
+    st.markdown("")
     st.markdown(
         """
 Have you ever felt like a system made a decision about you,  
@@ -186,6 +189,7 @@ This is a demo scenario. Actual analysis depends on your data.
 """
     )
 
+    st.markdown("")
     st.markdown("---")
 
     if st.button("View Full Structural Risk Analysis", key="btn_open_workbench", width="stretch"):
@@ -206,9 +210,9 @@ st.markdown(
     """
 ### Feedback & Collaboration
 
-Have questions? Want to try PHL with your own data or discuss a collaboration?
+Questions or want to try with your own data?
 
-Reach out to the independent researcher via GitHub:  
+Contact the independent researcher: hongtang-ai on GitHub  
 https://github.com/hongtang-ai
 """
 )
