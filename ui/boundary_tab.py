@@ -21,7 +21,7 @@ def render_boundary_tab(analysis: dict | None) -> None:
     fig = px.histogram(data, nbins=30)
     fig.update_layout(title="Decision Boundary Density (Credit Cases)")
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     st.info(
         """

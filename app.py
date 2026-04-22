@@ -1,13 +1,15 @@
-import hashlib
 import sys
 from pathlib import Path
+
+# Repo root on path (required for Streamlit Cloud + local)
+sys.path.append(str(Path(__file__).parent.resolve()))
+
+import hashlib
 from typing import Any
 
 import streamlit as st
 
-sys.path.append(str(Path(__file__).parent))
-
-from analyzer import load_demo_case, run_full_credit_pipeline
+from analyzer import load_demo_case
 from csv_pipeline import run_csv_pipeline
 from workbench import render_professional_workbench
 
@@ -23,7 +25,6 @@ _DEFAULTS: dict[str, Any] = {
     "model_hash": None,
     "csv_file": None,
     "model_file": None,
-    "_model_pipeline_fp": None,
 }
 for _k, _v in _DEFAULTS.items():
     if _k not in st.session_state:
@@ -151,24 +152,13 @@ elif mode == "model":
     if mf is None:
         st.info("Upload a .pth model in Professional Analysis above.")
     else:
-        fp = hashlib.sha256(mf.getvalue()).hexdigest()
-        if st.session_state.get("_model_pipeline_fp") != fp:
-            with st.spinner("Running model analysis..."):
-                try:
-                    analysis, model = run_full_credit_pipeline(mf)
-                    st.session_state["analysis"] = analysis
-                    st.session_state["loaded_model"] = model
-                    st.session_state["use_demo"] = False
-                    st.session_state["demo_data"] = None
-                    st.session_state["_model_pipeline_fp"] = fp
-                except Exception as exc:
-                    st.error(f"Model pipeline failed: {exc}")
-                    st.session_state["loaded_model"] = None
-                    st.session_state["analysis"] = None
-
-        if st.session_state.get("analysis") is not None:
-            st.success("Model analysis complete — workbench below.")
-            render_professional_workbench(st.session_state["analysis"])
+        st.warning("Model analysis pipeline not yet implemented. Using demo fallback.")
+        analysis = load_demo_case()
+        st.session_state["analysis"] = analysis
+        st.session_state["use_demo"] = True
+        st.session_state["loaded_model"] = None
+        st.session_state["demo_data"] = analysis
+        render_professional_workbench(analysis)
 
 else:
     st.info("Choose **Personal Quick Check** or **Professional Analysis** above to begin.")

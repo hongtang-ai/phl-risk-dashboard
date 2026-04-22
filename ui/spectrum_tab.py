@@ -26,7 +26,7 @@ def render_spectrum_tab(analysis: dict | None) -> None:
         yaxis_type="log",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     st.info(
         """

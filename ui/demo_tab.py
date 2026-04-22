@@ -89,7 +89,7 @@ def render_demo_tab(analysis: dict | None) -> None:
 
     spectrum_fig = data.get("spectrum_fig")
     if spectrum_fig is not None:
-        st.plotly_chart(spectrum_fig, use_container_width=True)
+        st.plotly_chart(spectrum_fig, width="stretch")
     else:
         st.info("No spectrum figure in this demo payload.")
 
