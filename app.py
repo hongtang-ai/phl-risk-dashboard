@@ -128,59 +128,57 @@ elif mode in ("demo", "simple_input"):
     st.info("This is a simplified demonstration, not real model output")
 
     st.markdown("---")
-    st.markdown("### 普通用户真实故事")
+    st.markdown("### A real story from an everyday user")
     st.markdown(
         """
-你有没有过这种感觉：
-
-系统已经替你做了决定，  
-但你根本不知道“为什么”。
+Have you ever felt like a system made a decision about you,  
+but never really told you why?
 
 ---
 
-我朋友 Mike 上次就遇到了这件事。
+This is exactly what happened to my friend Mike.
 
-Mike 31 岁，在 Ohio 做仓库主管，有两个孩子。
+Mike is 31, works as a warehouse supervisor in Ohio, and has two kids.
 
-前阵子车坏了，他申请了一笔 $9,500 的二手车贷款，  
-只是为了把家里的日常先撑住。
+His car broke down recently, so he applied for a $9,500 used car loan,  
+just to keep daily life moving.
 
-结果系统秒拒。
+The system rejected him instantly.
 
 Approval probability: 0.48  
 No real explanation.
 
-他打电话时特别沮丧：
+He called me upset and said:
 
-“我信用也不算差，为什么系统直接把我拒了？  
-我连解释机会都没有。”
-
----
-
-我们就把他的案例放进这个工具里看。
-
-很快就发现：
-
-- 他正好落在模型决策边界附近  
-- 这个区域模型特别敏感  
-- 内部表示也不稳定  
-
-也就是说，收入或征信哪怕只动一点点，  
-结论都可能直接翻转。
+“My credit is not even that bad, so why did it shut me down?  
+Feels like I never even got a chance.”
 
 ---
 
-系统给的建议很直接：  
-这个案例不该全自动处理，应该有人复核。
+So we ran his case through this tool.
 
-后来 Mike 补了几份材料，进入人工复核。
+What we found was pretty clear:
 
-贷款最终通过了。
+- He landed right near the model's decision boundary  
+- The model was highly sensitive in that region  
+- The internal representation was unstable  
 
-他后来说了一句很真实的话：
+That means even a small change in income or credit history  
+could completely flip the outcome.
 
-“要是没人再看一眼，我可能就被 AI 永久卡住了。  
-最可怕的是，我连发生了什么都不知道。”
+---
+
+The recommendation was simple:  
+this should not be a fully automated decision.
+
+Mike added a bit more documentation, and a human reviewed it.
+
+The loan was approved.
+
+Later he told me:
+
+“If nobody looked at it again, I would've just been blocked by AI.  
+That's the scary part.”
 
 ---
 
