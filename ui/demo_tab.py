@@ -1,35 +1,55 @@
+import math
+
 import streamlit as st
 
 from analyzer import load_demo_case
 
 
-def render_demo_tab() -> None:
+def render_demo_tab(analysis: dict | None) -> None:
     st.markdown("## 🧪 Demo: Loan Rejection Explanation")
 
-    if st.button("Load German Credit Rejection Demo Case"):
-        st.session_state["demo_data"] = load_demo_case()
-        st.success("Demo case loaded")
-
-    data = st.session_state.get("demo_data")
-    if data is None and st.session_state.get("use_demo") and st.session_state.get("analysis") is not None:
-        data = st.session_state["analysis"]
-
-    if data is None:
-        st.info("Click the button above to load a demo case.")
+    if analysis is None:
+        st.warning("No analysis available.")
         return
+
+    if st.button("Load German Credit Rejection Demo Case"):
+        d = load_demo_case()
+        st.session_state["analysis"] = d
+        st.session_state["demo_data"] = d
+        st.session_state["use_demo"] = True
+        st.session_state["loaded_model"] = None
+        st.success("Demo case loaded")
+        st.rerun()
+
+    data = analysis
 
     st.markdown("---")
 
-    st.markdown("### ⚠️ Demo Mode: German Credit Rejection Analysis")
-
-    st.markdown("### Case Background")
-
-    q = float(data.get("q", 0.48))
-    st.write(
-        "Applicant applied for a €5000 used car loan. "
-        f"The model produced approval probability q={q:.2f}, "
-        "placing the case near the decision boundary. The application was rejected."
-    )
+    case = str(data.get("case_name", ""))
+    if case.startswith("Uploaded CSV"):
+        st.markdown("### CSV structural case (POC)")
+        st.markdown("### Case summary")
+        st.write(
+            f"**{case}** — sample size **{data.get('sample_size', 'n/a')}**, "
+            f"numeric features **{data.get('n_features', 'n/a')}**. "
+            "Metrics below summarize representation of the untrained MLP logits (illustration only)."
+        )
+    elif data.get("q") is not None:
+        st.markdown("### Demo Mode: German Credit Rejection Analysis")
+        st.markdown("### Case Background")
+        q = float(data["q"])
+        st.write(
+            "Applicant applied for a €5000 used car loan. "
+            f"The model produced approval probability q={q:.2f}, "
+            "placing the case near the decision boundary. The application was rejected."
+        )
+    else:
+        st.markdown("### Uploaded model (German credit pipeline)")
+        st.markdown("### Case summary")
+        st.write(
+            "Structural metrics are computed on the **German credit test split**, restricted to "
+            "**rejection / boundary** samples (low q or q near 0.5). This is not a consumer-facing scorecard."
+        )
 
     st.markdown("---")
 
@@ -45,7 +65,16 @@ def render_demo_tab() -> None:
 
     col4.metric("SSI", f"{float(data['ssi']):.2f}")
 
-    risk_level = str(data.get("risk_level", "")).upper()
+    risk_level = str(data.get("risk_level", "") or "").upper()
+    if not risk_level:
+        try:
+            rs = float(data.get("risk_score", float("nan")))
+            if math.isfinite(rs):
+                risk_level = "HIGH" if rs > 0.15 else "MEDIUM" if rs > 0.08 else "LOW"
+        except (TypeError, ValueError):
+            risk_level = "N/A"
+    if not risk_level:
+        risk_level = "N/A"
     risk_color = "orange" if risk_level == "MEDIUM" else "green"
     if risk_level == "HIGH":
         risk_color = "red"

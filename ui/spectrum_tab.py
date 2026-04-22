@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 
-def render_spectrum_tab(model, analysis):
+def render_spectrum_tab(analysis: dict | None) -> None:
     st.header("Spectrum Analysis")
 
     if analysis is None:

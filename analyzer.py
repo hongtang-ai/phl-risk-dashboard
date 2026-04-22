@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import io
 import math
 from typing import Any
 
 import numpy as np
 import torch
+import torch.nn as nn
 
 
 # =========================
@@ -123,6 +125,98 @@ def spectrum_alpha_analyzer(results: list[dict[str, Any]]) -> dict[str, float]:
     ss_tot = float(((z - z.mean()) ** 2).sum())
     r2 = float("nan") if ss_tot <= 0 else float(1.0 - ((z - zhat) ** 2).sum() / ss_tot)
     return {"alpha": float(a), "r2": r2}
+
+
+def run_credit_rejection_analysis(model: nn.Module, dataloader) -> dict[str, Any]:
+    """PHL-style stats on rejection / boundary region of credit scores (German pipeline)."""
+    model.eval()
+    zs: list[torch.Tensor] = []
+    hs: list[torch.Tensor] = []
+    qs: list[torch.Tensor] = []
+
+    with torch.no_grad():
+        for x, _ in dataloader:
+            z, h = model(x)
+            q = torch.sigmoid(z)
+            zs.append(z)
+            hs.append(h)
+            qs.append(q)
+
+    z = torch.cat(zs)
+    h = torch.cat(hs)
+    q = torch.cat(qs)
+
+    reject_mask = (q < 0.5) | ((q > 0.45) & (q < 0.55))
+    if int(reject_mask.sum().item()) < 2:
+        return {
+            "sigma": float("nan"),
+            "mid": float("nan"),
+            "effective_rank": float("nan"),
+            "ssi": float("nan"),
+            "risk_score": float("nan"),
+            "eigvals": [],
+            "reject_count": int(reject_mask.sum().item()),
+        }
+
+    z_r = z[reject_mask]
+    h_r = h[reject_mask]
+    q_r = q[reject_mask]
+
+    sigma = float(z_r.std().item())
+    mid = compute_mid_fraction(q_r)
+
+    h_center = h_r - h_r.mean(0)
+    cov = (h_center.T @ h_center) / max(len(h_center) - 1, 1)
+    eigvals = torch.linalg.eigvalsh(cov).cpu().numpy()
+
+    r = compute_effective_rank(eigvals)
+    ssi = compute_ssi(eigvals)
+    risk_score = float(ssi / (r + 1e-8))
+
+    return {
+        "sigma": sigma,
+        "mid": mid,
+        "effective_rank": r,
+        "ssi": ssi,
+        "risk_score": risk_score,
+        "eigvals": eigvals.tolist(),
+        "reject_count": int(reject_mask.sum().item()),
+    }
+
+
+def run_full_credit_pipeline_on_model(model: nn.Module) -> dict[str, Any]:
+    from data_loader_credit import load_german_credit_data
+
+    train_loader, test_loader = load_german_credit_data()
+    _ = train_loader
+    return run_credit_rejection_analysis(model, test_loader)
+
+
+def run_full_credit_pipeline(uploaded_file: Any) -> tuple[dict[str, Any], nn.Module]:
+    """
+    Load a ``.pth`` checkpoint from a Streamlit ``UploadedFile`` (or bytes-like) and
+    return ``(analysis_dict, model)`` for the German credit rejection-region pipeline.
+    """
+    payload: bytes | bytearray
+    if hasattr(uploaded_file, "getvalue"):
+        payload = uploaded_file.getvalue()
+    elif isinstance(uploaded_file, (bytes, bytearray)):
+        payload = bytes(uploaded_file)
+    else:
+        raise TypeError("uploaded_file must provide getvalue() or be bytes")
+
+    buf = io.BytesIO(payload)
+    try:
+        model = torch.load(buf, map_location=torch.device("cpu"), weights_only=False)
+    except TypeError:
+        buf.seek(0)
+        model = torch.load(buf, map_location=torch.device("cpu"))
+
+    if not isinstance(model, nn.Module):
+        raise TypeError("Loaded object is not a torch.nn.Module")
+
+    analysis = run_full_credit_pipeline_on_model(model)
+    return analysis, model
 
 
 def load_demo_case() -> dict[str, Any]:

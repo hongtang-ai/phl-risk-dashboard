@@ -1,208 +1,177 @@
+import hashlib
 import sys
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
-import torch
 
 sys.path.append(str(Path(__file__).parent))
 
-from analyzer import compute_effective_rank, compute_mid_fraction, compute_ssi, load_demo_case
-from data_loader_credit import load_german_credit_data
-from ui.overview import render_overview
-from ui.spectrum_tab import render_spectrum_tab
-from ui.boundary_tab import render_boundary_tab
-from ui.risk_tab import render_risk_tab
-from ui.demo_tab import render_demo_tab
+from analyzer import load_demo_case, run_full_credit_pipeline
+from csv_pipeline import run_csv_pipeline
+from workbench import render_professional_workbench
 
 st.set_page_config(page_title="PHL Risk Dashboard", layout="wide")
 
-if "use_demo" not in st.session_state:
-    st.session_state.use_demo = False
-if "analysis" not in st.session_state:
-    st.session_state.analysis = None
+_DEFAULTS: dict[str, Any] = {
+    "mode": None,
+    "use_demo": False,
+    "analysis": None,
+    "input_data": None,
+    "demo_data": None,
+    "loaded_model": None,
+    "model_hash": None,
+    "csv_file": None,
+    "model_file": None,
+    "_model_pipeline_fp": None,
+}
+for _k, _v in _DEFAULTS.items():
+    if _k not in st.session_state:
+        st.session_state[_k] = _v
 
 
-def run_credit_rejection_analysis(model: torch.nn.Module, dataloader) -> dict[str, Any]:
-    """
-    对拒绝样本区域做 PHL 分析。
+# ----- Sidebar reset -----
+with st.sidebar:
+    if st.button("Reset mode & analysis", key="btn_reset_all"):
+        for key in list(st.session_state.keys()):
+            if not str(key).startswith("__"):
+                try:
+                    del st.session_state[key]
+                except KeyError:
+                    pass
+        for _k, _v in _DEFAULTS.items():
+            st.session_state[_k] = _v
+        st.rerun()
 
-    拒绝区域定义：
-    - 低通过概率：q < 0.5
-    - 或边界不确定区：0.45 < q < 0.55
-    """
-    model.eval()
-    zs: list[torch.Tensor] = []
-    hs: list[torch.Tensor] = []
-    qs: list[torch.Tensor] = []
+# ----- Header -----
+st.title("PHL Risk Diagnostics Dashboard")
+st.caption("Structure-aware model risk analysis for credit decisions")
 
-    with torch.no_grad():
-        for x, _ in dataloader:
-            z, h = model(x)
-            q = torch.sigmoid(z)
-            zs.append(z)
-            hs.append(h)
-            qs.append(q)
+st.markdown("## Choose Your Mode")
 
-    z = torch.cat(zs)
-    h = torch.cat(hs)
-    q = torch.cat(qs)
+col1, col2 = st.columns(2)
 
-    reject_mask = (q < 0.5) | ((q > 0.45) & (q < 0.55))
-    if int(reject_mask.sum().item()) < 2:
-        return {
-            "sigma": float("nan"),
-            "mid": float("nan"),
-            "effective_rank": float("nan"),
-            "ssi": float("nan"),
-            "risk_score": float("nan"),
-            "eigvals": [],
-            "reject_count": int(reject_mask.sum().item()),
-        }
-
-    z_r = z[reject_mask]
-    h_r = h[reject_mask]
-    q_r = q[reject_mask]
-
-    sigma = float(z_r.std().item())
-    mid = compute_mid_fraction(q_r)
-
-    h_center = h_r - h_r.mean(0)
-    cov = (h_center.T @ h_center) / max(len(h_center) - 1, 1)
-    eigvals = torch.linalg.eigvalsh(cov).cpu().numpy()
-
-    r = compute_effective_rank(eigvals)
-    ssi = compute_ssi(eigvals)
-    risk_score = float(ssi / (r + 1e-8))
-
-    return {
-        "sigma": sigma,
-        "mid": mid,
-        "effective_rank": r,
-        "ssi": ssi,
-        "risk_score": risk_score,
-        "eigvals": eigvals.tolist(),
-        "reject_count": int(reject_mask.sum().item()),
-    }
-
-
-def run_full_credit_pipeline(model: torch.nn.Module) -> dict[str, Any]:
-    train_loader, test_loader = load_german_credit_data()
-    _ = train_loader
-    return run_credit_rejection_analysis(model, test_loader)
-
-
-# ===== Header =====
-col1, col2 = st.columns([1, 6])
 with col1:
-    logo_path = Path("assets/logo.png")
-    if logo_path.exists():
-        try:
-            st.image(str(logo_path), width=80)
-        except Exception:
-            st.markdown("### 🏦")
-    else:
-        st.markdown("### 🏦")
+    st.markdown("### Personal Quick Check")
+    st.markdown("Quickly check your loan approval chance")
+
+    if st.button("Load Demo Case", key="btn_demo"):
+        st.session_state.mode = "demo"
+        st.session_state.use_demo = True
+        st.session_state.loaded_model = None
+        st.session_state.model_hash = None
+        st.session_state.model_file = None
+        _demo = load_demo_case()
+        st.session_state.analysis = _demo
+        st.session_state.demo_data = _demo
+
+    age = st.number_input("Age", min_value=18, max_value=75, value=30, key="in_age")
+    credit = st.slider("Credit Score", min_value=0, max_value=100, value=60, key="in_credit")
+    amount = st.number_input("Loan Amount (€)", min_value=100, max_value=20000, value=5000, key="in_amt")
+
+    if st.button("Check My Risk", key="btn_simple"):
+        st.session_state.mode = "simple_input"
+        st.session_state.use_demo = False
+        st.session_state.analysis = None
+        st.session_state.demo_data = None
+        st.session_state.loaded_model = None
+        st.session_state.model_hash = None
+        st.session_state.model_file = None
+        st.session_state.input_data = {"age": age, "credit": credit, "amount": amount}
+
 with col2:
-    st.title("PHL Risk Diagnostics Dashboard")
-    st.caption("Structure-aware model risk analysis for credit decisions")
+    st.markdown("### Professional Analysis")
+    st.markdown("Upload data for structural risk diagnostics")
 
-if st.session_state.get("use_demo", False):
-    st.warning(
-        "You are viewing a pre-configured demonstration case. "
-        "Results do not reflect real-time model inference."
-    )
+    csv_file = st.file_uploader("Upload CSV Dataset", type=["csv"], key="up_csv")
+    model_file = st.file_uploader("Upload Model (.pth)", type=["pth"], key="up_pth")
 
-# ===== Sidebar =====
-st.sidebar.header("Configuration")
+    if csv_file is not None:
+        st.session_state.mode = "csv"
+        st.session_state.csv_file = csv_file
+        st.session_state.use_demo = False
 
-if st.session_state.get("use_demo", False):
-    st.sidebar.info("Demo mode active: model upload disabled")
-    model_file = None
+    if model_file is not None:
+        file_bytes = model_file.getvalue()
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
+        st.session_state.model_hash = file_hash
+        st.session_state.model_file = model_file
+        st.session_state.mode = "model"
+        st.session_state.use_demo = False
+
+st.markdown("---")
+
+# ----- Mode dispatch -----
+mode = st.session_state.get("mode")
+
+if mode == "demo":
+    st.session_state["analysis"] = load_demo_case()
+    st.session_state["use_demo"] = True
+    st.session_state["loaded_model"] = None
+    st.session_state["demo_data"] = st.session_state["analysis"]
+    st.success("Demo loaded")
+    render_professional_workbench(st.session_state["analysis"])
+
+elif mode == "simple_input":
+    st.markdown("## Result")
+    data = st.session_state.get("input_data") or {}
+    credit = float(data.get("credit", 60))
+    score = 0.5 + (credit - 50.0) / 200.0
+    score = max(0.05, min(0.95, score))
+
+    st.metric("Approval Probability", f"{score:.2f}")
+    st.info("This is a simplified demonstration, not real model output")
+
+    if score < 0.5:
+        st.warning("Borderline / High risk (illustrative)")
+    else:
+        st.success("Likely approved (illustrative)")
+
+elif mode == "csv":
+    cf = st.session_state.get("csv_file")
+    if cf is None:
+        st.info("Upload a CSV in Professional Analysis above.")
+    else:
+        with st.spinner("Running CSV analysis..."):
+            try:
+                analysis = run_csv_pipeline(cf)
+            except Exception as exc:
+                st.error(f"CSV pipeline failed: {exc}")
+                analysis = None
+        if analysis is not None:
+            st.session_state["analysis"] = analysis
+            st.session_state["use_demo"] = False
+            st.session_state["loaded_model"] = None
+            st.session_state["demo_data"] = None
+            st.success("CSV analysis complete — workbench below.")
+            render_professional_workbench(analysis)
+
+elif mode == "model":
+    mf = st.session_state.get("model_file")
+    if mf is None:
+        st.info("Upload a .pth model in Professional Analysis above.")
+    else:
+        fp = hashlib.sha256(mf.getvalue()).hexdigest()
+        if st.session_state.get("_model_pipeline_fp") != fp:
+            with st.spinner("Running model analysis..."):
+                try:
+                    analysis, model = run_full_credit_pipeline(mf)
+                    st.session_state["analysis"] = analysis
+                    st.session_state["loaded_model"] = model
+                    st.session_state["use_demo"] = False
+                    st.session_state["demo_data"] = None
+                    st.session_state["_model_pipeline_fp"] = fp
+                except Exception as exc:
+                    st.error(f"Model pipeline failed: {exc}")
+                    st.session_state["loaded_model"] = None
+                    st.session_state["analysis"] = None
+
+        if st.session_state.get("analysis") is not None:
+            st.success("Model analysis complete — workbench below.")
+            render_professional_workbench(st.session_state["analysis"])
+
 else:
-    model_file = st.sidebar.file_uploader("Upload Model (.pth)", type=["pth"])
-scenario = st.sidebar.selectbox("Scenario", ["German Credit - Rejection Analysis"])
-eps = st.sidebar.slider("Mid Threshold ε", 0.01, 0.1, 0.05)
+    st.info("Choose **Personal Quick Check** or **Professional Analysis** above to begin.")
 
-
-# ===== Load Model =====
-@st.cache_data
-def load_model(file):
-    if file:
-        return torch.load(file)
-    return None
-
-
-model = load_model(model_file)
-
-# ===== Demo (no model required) =====
-st.sidebar.markdown("---")
-st.sidebar.subheader("Demo")
-if st.sidebar.button("Load German Credit Rejection Demo Case"):
-    st.session_state.use_demo = True
-    _demo = load_demo_case()
-    st.session_state.analysis = _demo
-    st.session_state["demo_data"] = _demo
-    st.success("Demo case loaded")
-if st.sidebar.button("Clear Demo Case"):
-    st.session_state.use_demo = False
-    st.session_state.analysis = None
-    st.session_state.pop("demo_data", None)
-
-effective_model = None if st.session_state.use_demo else model
-
-# ===== Analysis =====
-@st.cache_data
-def get_analysis(_model, use_demo: bool):
-    if use_demo:
-        return load_demo_case()
-    if _model is None:
-        return None
-    return run_full_credit_pipeline(_model)
-
-
-if st.session_state.get("use_demo", False):
-    analysis = st.session_state.analysis or load_demo_case()
-    st.session_state.analysis = analysis
-else:
-    analysis = get_analysis(effective_model, False)
-
-# Keep the controls visible and ready for future wiring.
-st.sidebar.caption(f"Selected scenario: {scenario}")
-st.sidebar.caption(f"Mid threshold ε: {eps:.2f}")
-if st.session_state.use_demo:
-    st.sidebar.success("Demo mode: using fixed case data (no model inference).")
-elif model is None:
-    st.sidebar.info("Upload a .pth model or load the demo case.")
-
-# ===== Demo strip (bank-friendly entry) =====
-st.markdown("## Demo: How PHL Explains a Loan Rejection Appeal")
-if st.session_state.use_demo and analysis is not None:
-    st.success("Demo case loaded")
-    st.caption(analysis.get("case_name", "Demo case"))
-else:
-    st.caption("Tip: click **Load German Credit Rejection Demo Case** in the sidebar for a stable walkthrough.")
-
-# ===== Tabs =====
-tabs = st.tabs(
-    ["Overview", "Spectrum Analysis", "Decision Boundary", "Risk Report", "申诉解释 Demo"]
-)
-
-with tabs[0]:
-    render_overview(effective_model, analysis)
-
-with tabs[1]:
-    render_spectrum_tab(effective_model, analysis)
-
-with tabs[2]:
-    render_boundary_tab(effective_model, analysis)
-
-with tabs[3]:
-    render_risk_tab(effective_model, analysis)
-
-with tabs[4]:
-    render_demo_tab()
-
-# ===== Footer =====
 st.markdown("---")
 st.caption("Developed by Independent Researcher | Focus on Structured XAI")

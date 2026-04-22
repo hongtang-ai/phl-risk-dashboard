@@ -1,8 +1,12 @@
 import streamlit as st
 
 
-def render_overview(model, analysis):
+def render_overview(analysis: dict | None) -> None:
     st.header("Overview")
+
+    if analysis is None:
+        st.warning("No analysis available.")
+        return
 
     st.write(
         """
@@ -16,12 +20,6 @@ def render_overview(model, analysis):
     """
     )
 
-    if analysis is not None and analysis.get("description"):
+    if analysis.get("description"):
         st.subheader("Case Background")
         st.write(analysis["description"])
-
-    if analysis is not None:
-        return
-
-    if model is None:
-        st.warning("Please upload a model to begin analysis, or load the demo case from the sidebar.")

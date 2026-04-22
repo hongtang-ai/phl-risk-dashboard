@@ -1,9 +1,10 @@
 import streamlit as st
+import plotly.graph_objects as go
 
 from ui.pdf_export import generate_pdf_report
 
 
-def render_risk_tab(model, analysis):
+def render_risk_tab(analysis: dict | None) -> None:
     st.header("Risk Report")
 
     if analysis is None:
@@ -31,7 +32,15 @@ def render_risk_tab(model, analysis):
         st.success("Risk level acceptable")
 
     try:
-        filename, pdf_bytes = generate_pdf_report(analysis)
+        eigvals = analysis.get("eigvals") or []
+        spectrum_fig = go.Figure()
+        spectrum_fig.add_trace(go.Scatter(y=eigvals, mode="lines+markers"))
+        spectrum_fig.update_layout(
+            title="Covariance Spectrum Sharpening",
+            yaxis_type="log",
+        )
+        report_payload = {**analysis, "spectrum_fig": spectrum_fig}
+        filename, pdf_bytes = generate_pdf_report(report_payload)
         st.caption(f"本次导出文件：`{filename}`")
         st.download_button(
             label="📄 生成并下载 PDF 报告",

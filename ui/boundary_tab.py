@@ -3,7 +3,7 @@ import plotly.express as px
 import numpy as np
 
 
-def render_boundary_tab(model, analysis):
+def render_boundary_tab(analysis: dict | None) -> None:
     st.header("Decision Boundary Sensitivity")
 
     if analysis is None:
@@ -15,7 +15,6 @@ def render_boundary_tab(model, analysis):
         st.warning("No boundary sensitivity statistic available.")
         return
 
-    # 由 mid 构造边界附近的示意分布，可替换为逐样本真实边界距离。
     rng = np.random.default_rng(42)
     data = rng.normal(loc=float(mid), scale=0.01, size=200)
 
