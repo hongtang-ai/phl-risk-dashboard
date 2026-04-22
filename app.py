@@ -128,6 +128,45 @@ elif mode in ("demo", "simple_input"):
     st.info("This is a simplified demonstration, not real model output")
 
     st.markdown("---")
+    st.markdown("### 💬 A real situation this reminds me of...")
+    st.markdown(
+        """
+“My friend Mike got rejected by AI... just like that.”
+
+Mike is 31, works as a warehouse supervisor in Ohio, and has two kids.
+
+His old car broke down, so he applied for a $9,500 used car loan — just to get his kids to school and back.
+
+The system rejected him instantly.
+
+Approval probability: 0.48.  
+No real explanation.
+
+He called me frustrated:  
+“Man, my credit is not even that bad... why did AI just shut me down like that? Feels like I did not even get a chance.”
+
+So I ran his case through this tool.
+
+Turns out — he landed right in the model's high-sensitivity boundary zone.
+
+Internally, the model's representation was unstable.  
+A tiny change in income or credit history could flip the decision completely.
+
+👉 The tool suggested: this case should be manually reviewed.
+
+Mike added a bit more documentation.  
+After human review, the loan was approved.
+
+Later he told me:  
+“Honestly, if no one looked twice... I would have been stuck. AI would have just blocked me.”
+
+---
+
+This is a demo scenario. Actual analysis depends on your data.
+"""
+    )
+
+    st.markdown("---")
 
     if st.button(
         "🔍 View Full Structural Risk Analysis",

@@ -43,6 +43,48 @@ def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
         col5.metric("Risk Score", "0.135 (MEDIUM)")
 
     st.markdown("---")
+    st.markdown("### 🏦 Bank Compliance Use Case")
+    st.markdown(
+        """
+“This is exactly the kind of case Sarah deals with every week.”
+
+Last week, the bank received a complaint:
+
+A customer (Mike) was automatically rejected for a $9,500 used car loan.
+
+On the phone, he was clearly upset:  
+“I submitted everything. Why was I rejected? At least tell me why.”
+
+Sarah, a compliance officer, now had to answer.
+
+And under regulations, she cannot just say “the model said so.”
+
+She ran the case through PHL.
+
+What she found:
+- The application sat right at the decision boundary
+- The model showed high sensitivity
+- Internal representation had collapsed (low effective rank)
+- Spectrum showed strong feature concentration
+
+👉 Risk level: MEDIUM  
+👉 Recommendation: Trigger human review
+
+The tool generated a structured explanation she could:
+- Send to the customer
+- Use for audit / regulatory documentation
+
+Later she told me:
+
+“What matters is not just which feature matters — it is knowing when the model itself becomes unstable. That's what makes this usable for compliance.”
+
+---
+
+This is a demo scenario. Actual analysis depends on your data.
+"""
+    )
+
+    st.markdown("---")
 
     tabs = st.tabs(
         [
