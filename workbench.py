@@ -1,4 +1,4 @@
-"""Unified professional analysis workbench (5 tabs) — analysis-only Tab API."""
+"""Unified professional workbench (5 tabs) — analysis-only Tab API."""
 
 from __future__ import annotations
 
@@ -15,15 +15,14 @@ from ui.spectrum_tab import render_spectrum_tab
 
 def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
     if analysis is None:
-        st.info("No analysis available. Please load a demo case or upload a model/CSV first.")
+        st.info("No analysis available yet. Please load demo or upload data.")
         return
 
     use_demo = st.session_state.get("use_demo", False)
 
     if use_demo:
         st.warning(
-            "Demo Mode: Using pre-configured German Credit Rejection Case. "
-            "Results are for demonstration only."
+            "Demo Mode: Using pre-configured German Credit Rejection Case for illustration only."
         )
 
     tabs = st.tabs(
