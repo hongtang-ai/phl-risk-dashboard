@@ -112,6 +112,7 @@ elif mode in ("demo", "simple_input"):
 
     if mode == "demo":
         st.success("Demo case loaded successfully")
+        st.metric("Approval Probability", "0.48")
 
     if mode == "simple_input":
         data = st.session_state.get("input_data") or {}
@@ -126,14 +127,19 @@ elif mode in ("demo", "simple_input"):
 
     st.info("This is a simplified demonstration, not real model output")
 
-    if st.button("View Full Structural Analysis", key="btn_open_workbench"):
+    st.markdown("---")
+
+    if st.button(
+        "🔍 View Full Structural Risk Analysis",
+        key="btn_open_workbench",
+        width="stretch",
+    ):
+        if st.session_state.get("analysis") is None:
+            st.session_state.analysis = load_demo_case()
+            st.session_state.use_demo = True
+
         st.session_state.show_workbench = True
-        if st.session_state.mode == "simple_input":
-            st.session_state.analysis = load_demo_case()
-            st.session_state.use_demo = True
-        elif st.session_state.mode == "demo" and st.session_state.get("analysis") is None:
-            st.session_state.analysis = load_demo_case()
-            st.session_state.use_demo = True
+        st.rerun()
 
 if mode in ("csv", "model") or st.session_state.get("show_workbench"):
     st.markdown("---")

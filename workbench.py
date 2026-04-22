@@ -25,6 +25,25 @@ def render_professional_workbench(analysis: dict[str, Any] | None) -> None:
             "Demo Mode: Using pre-configured German Credit Rejection Case for illustration only."
         )
 
+    if use_demo:
+        st.markdown("### 📘 Case Background")
+        st.info(
+            "Demo Case: 张伟（31岁）申请 €5000 二手车贷款，信用分 60 分。"
+            "模型输出概率 q = 0.48，处于决策边界附近，被自动拒绝。"
+        )
+
+    if use_demo:
+        st.markdown("### 📊 Key Risk Metrics")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Volatility (σ)", "6.23")
+        col2.metric("Mid-density", "0.0075")
+        col3.metric("Effective Rank", "3.12")
+        col4, col5 = st.columns(2)
+        col4.metric("SSI", "0.42")
+        col5.metric("Risk Score", "0.135 (MEDIUM)")
+
+    st.markdown("---")
+
     tabs = st.tabs(
         [
             "Overview",
