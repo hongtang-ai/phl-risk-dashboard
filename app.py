@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import math
 
 # Repo root on path (Streamlit Cloud + local)
 sys.path.append(str(Path(__file__).parent.resolve()))
@@ -189,8 +190,24 @@ elif mode in ("demo", "simple_input"):
 
         if mode == "simple_input":
             data = st.session_state.get("input_data") or {}
+            age = float(data.get("age", 30))
             credit = float(data.get("credit", 60))
-            score = 0.5 + (credit - 50.0) / 200.0
+            amount = float(data.get("amount", 5000))
+
+            # Lightweight heuristic for quick-check mode:
+            # use all three user inputs to mimic boundary sensitivity.
+            age_n = (age - 18.0) / (75.0 - 18.0)
+            credit_n = credit / 100.0
+            amount_n = (amount - 100.0) / (20000.0 - 100.0)
+
+            linear = (
+                -0.85
+                + 1.55 * credit_n
+                - 0.40 * age_n
+                - 1.00 * amount_n
+                + 0.25 * credit_n * (1.0 - amount_n)
+            )
+            score = 1.0 / (1.0 + math.exp(-linear))
             score = max(0.05, min(0.95, score))
             delta_txt = "↑ above boundary" if score >= 0.5 else "↓ below boundary"
             st.metric(
