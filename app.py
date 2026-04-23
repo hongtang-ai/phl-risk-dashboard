@@ -234,6 +234,33 @@ elif mode in ("demo", "simple_input"):
                 q_alt = predict_approval_probability(a, c, amt)
                 sens_cols[idx % 3].metric(label, f"{q_alt:.3f}", delta=f"{q_alt - score:+.3f}")
 
+            age_minus = predict_approval_probability(max(18.0, age - 2.0), credit, amount)
+            age_plus = predict_approval_probability(min(75.0, age + 2.0), credit, amount)
+            credit_minus = predict_approval_probability(age, max(0.0, credit - 5.0), amount)
+            credit_plus = predict_approval_probability(age, min(100.0, credit + 5.0), amount)
+            amount_minus = predict_approval_probability(age, credit, max(100.0, amount - 500.0))
+            amount_plus = predict_approval_probability(age, credit, min(20000.0, amount + 500.0))
+
+            directional_scores = [
+                ("Age", age_plus - age_minus, "Increase age", "Decrease age"),
+                ("Credit score", credit_plus - credit_minus, "Increase credit score", "Decrease credit score"),
+                ("Loan amount", amount_plus - amount_minus, "Increase loan amount", "Decrease loan amount"),
+            ]
+            ordered = sorted(directional_scores, key=lambda x: abs(x[1]), reverse=True)
+
+            st.markdown("#### Directional Guidance")
+            st.markdown("To improve approval probability:")
+            for feature_name, direction, inc_text, dec_text in ordered:
+                improve_text = inc_text if direction > 0 else dec_text
+                tag = "↑ positive influence" if direction > 0 else "↓ negative influence"
+                tag_color = "#22c55e" if direction > 0 else "#ef4444"
+                st.markdown(
+                    f'- {improve_text} '
+                    f'<span style="color:{tag_color};font-weight:600;">{tag}</span> '
+                    f'<span style="color:#94a3b8;">(direction={direction:+.4f})</span>',
+                    unsafe_allow_html=True,
+                )
+
         st.markdown("</div>", unsafe_allow_html=True)
         st.info("Model inference based on learned decision boundary")
 
