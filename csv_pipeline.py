@@ -13,6 +13,32 @@ import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 
 from analyzer import compute_effective_rank, compute_ssi
+from inference import predict_probabilities
+
+
+def _pick_column(columns: list[str], candidates: list[str]) -> str | None:
+    for c in columns:
+        cl = c.lower()
+        if any(k in cl for k in candidates):
+            return c
+    return None
+
+
+def _extract_core_features(df: pd.DataFrame) -> np.ndarray:
+    numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+    if len(numeric_cols) < 3:
+        raise ValueError("CSV needs at least 3 numeric columns to run model inference.")
+
+    age_col = _pick_column(numeric_cols, ["age"])
+    credit_col = _pick_column(numeric_cols, ["credit", "score"])
+    amount_col = _pick_column(numeric_cols, ["amount", "loan"])
+
+    if age_col and credit_col and amount_col:
+        core = df[[age_col, credit_col, amount_col]].to_numpy(dtype=np.float64)
+    else:
+        # Fallback to first three numeric columns in order.
+        core = df[numeric_cols[:3]].to_numpy(dtype=np.float64)
+    return core
 
 
 def run_csv_pipeline(uploaded_file: io.BytesIO | Any) -> dict[str, Any]:
@@ -27,6 +53,11 @@ def run_csv_pipeline(uploaded_file: io.BytesIO | Any) -> dict[str, Any]:
     numeric_df = df.select_dtypes(include=[np.number])
     if numeric_df.shape[1] < 2:
         raise ValueError("CSV must contain at least two numeric columns (features + label).")
+
+    core_x = _extract_core_features(df)
+    inference_probs = predict_probabilities(core_x)
+    q_first = float(inference_probs[0]) if inference_probs.size > 0 else float("nan")
+    q_mean = float(np.mean(inference_probs)) if inference_probs.size > 0 else float("nan")
 
     X = numeric_df.iloc[:, :-1].values.astype(np.float64)
 
@@ -85,6 +116,9 @@ def run_csv_pipeline(uploaded_file: io.BytesIO | Any) -> dict[str, Any]:
 
     return {
         "case_name": "Uploaded CSV (POC)",
+        "q": q_first,
+        "inference_prob_mean": q_mean,
+        "inference_prob_first": q_first,
         "sigma": sigma,
         "mid": mid,
         "effective_rank": r_f,

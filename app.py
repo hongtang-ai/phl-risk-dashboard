@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import math
 
 # Repo root on path (Streamlit Cloud + local)
 sys.path.append(str(Path(__file__).parent.resolve()))
@@ -9,6 +8,7 @@ import streamlit as st
 
 from analyzer import load_demo_case
 from csv_pipeline import run_csv_pipeline
+from inference import predict_approval_probability
 from theme_inject import inject_phl_theme
 from workbench import render_professional_workbench
 
@@ -179,13 +179,16 @@ elif mode in ("demo", "simple_input"):
         st.markdown('<div class="glass p-6 mb-6">', unsafe_allow_html=True)
 
         if mode == "demo":
+            demo_prob = predict_approval_probability(31.0, 60.0, 9500.0)
+            demo_boundary = abs(demo_prob - 0.5)
+            demo_region = "boundary-adjacent" if demo_boundary < 0.08 else "stable region"
             st.success("Demo case loaded successfully")
             st.metric(
                 "Approval Probability",
-                "0.48",
-                delta="boundary-adjacent",
+                f"{demo_prob:.2f}",
+                delta=demo_region,
                 delta_color="off",
-                help="Illustrative score from the demo case; not a live underwriting decision.",
+                help="Model inference based on learned decision boundary.",
             )
 
         if mode == "simple_input":
@@ -193,37 +196,46 @@ elif mode in ("demo", "simple_input"):
             age = float(data.get("age", 30))
             credit = float(data.get("credit", 60))
             amount = float(data.get("amount", 5000))
-
-            # Lightweight heuristic for quick-check mode:
-            # use all three user inputs to mimic boundary sensitivity.
-            age_n = (age - 18.0) / (75.0 - 18.0)
-            credit_n = credit / 100.0
-            amount_n = (amount - 100.0) / (20000.0 - 100.0)
-
-            linear = (
-                -0.85
-                + 1.55 * credit_n
-                - 0.40 * age_n
-                - 1.00 * amount_n
-                + 0.25 * credit_n * (1.0 - amount_n)
-            )
-            score = 1.0 / (1.0 + math.exp(-linear))
-            score = max(0.05, min(0.95, score))
+            score = predict_approval_probability(age, credit, amount)
+            score = max(0.001, min(0.999, score))
+            boundary_distance = abs(score - 0.5)
+            boundary_region = "boundary-adjacent" if boundary_distance < 0.08 else "stable region"
             delta_txt = "↑ above boundary" if score >= 0.5 else "↓ below boundary"
             st.metric(
                 "Approval Probability",
                 f"{score:.2f}",
                 delta=delta_txt,
                 delta_color="normal" if score >= 0.5 else "inverse",
-                help="Heuristic illustration from slider inputs only.",
+                help="Model inference based on learned decision boundary.",
+            )
+            st.metric(
+                "Distance to Boundary |q - 0.5|",
+                f"{boundary_distance:.3f}",
+                delta=boundary_region,
+                delta_color="off",
+                help="Lower distance implies greater decision instability near the threshold.",
             )
             if score < 0.5:
                 st.warning("Borderline / High risk (illustrative)")
             else:
                 st.success("Likely approved (illustrative)")
 
+            st.markdown("#### Local Sensitivity Analysis")
+            sensitivity_points = [
+                ("Age -2", max(18.0, age - 2.0), credit, amount),
+                ("Age +2", min(75.0, age + 2.0), credit, amount),
+                ("Credit -5", age, max(0.0, credit - 5.0), amount),
+                ("Credit +5", age, min(100.0, credit + 5.0), amount),
+                ("Amount -500", age, credit, max(100.0, amount - 500.0)),
+                ("Amount +500", age, credit, min(20000.0, amount + 500.0)),
+            ]
+            sens_cols = st.columns(3)
+            for idx, (label, a, c, amt) in enumerate(sensitivity_points):
+                q_alt = predict_approval_probability(a, c, amt)
+                sens_cols[idx % 3].metric(label, f"{q_alt:.3f}", delta=f"{q_alt - score:+.3f}")
+
         st.markdown("</div>", unsafe_allow_html=True)
-        st.info("This is a simplified demonstration, not real model output")
+        st.info("Model inference based on learned decision boundary")
 
     st.markdown("---")
     st.markdown('<h3 class="phl-h3">A real story from an everyday user</h3>', unsafe_allow_html=True)
