@@ -43,7 +43,9 @@ def render_spectrum_tab(analysis: dict | None) -> None:
         title_font=dict(size=15, color="#f1f5f9"),
     )
 
+    st.markdown('<div class="glass p-6 mb-6">', unsafe_allow_html=True)
     st.plotly_chart(fig, width="stretch")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(
         """

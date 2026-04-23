@@ -12,15 +12,53 @@ from theme_inject import inject_phl_theme
 from workbench import render_professional_workbench
 
 st.set_page_config(page_title="Credit Decision Boundary Analyzer", layout="wide")
+import streamlit.components.v1 as components
+
+components.html(
+    """
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: '#00E5CC',
+        secondary: '#A78BFA',
+        bgdark: '#0a0a0a'
+      }
+    }
+  }
+}
+</script>
+<style>
+body {
+  background-color: #0a0a0a;
+}
+.glass {
+  background: rgba(24,24,27,0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 16px;
+}
+.glow-hover:hover {
+  box-shadow: 0 0 25px rgba(0,229,204,0.25);
+  transform: scale(1.02);
+}
+</style>
+""",
+    height=0,
+)
 inject_phl_theme()
 
 st.markdown(
     """
-<div class="phl-hero">
-  <h1 class="phl-hero-title">Credit Decision Boundary Analyzer</h1>
-  <p class="phl-hero-caption">
-    <span class="phl-hero-icon" aria-hidden="true">◇</span>
-    Understand why AI approves or rejects loans at the critical edge — structural insights for better, fairer credit decisions.
+<div class="glass p-8 mb-6">
+  <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+    Credit Decision Boundary Analyzer
+  </h1>
+  <p class="text-zinc-400 mt-2 text-lg">
+    Structural Risk Intelligence • PHL Framework
   </p>
 </div>
 """,
@@ -57,14 +95,20 @@ with st.sidebar:
         st.rerun()
 
 # ----- 首页双入口 -----
-st.markdown('<h2 class="phl-section-h2">Choose Your Mode</h2>', unsafe_allow_html=True)
+st.markdown('<div class="grid grid-cols-2 gap-6 mb-6">', unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown('<div class="phl-mode-marker phl-mode-personal" aria-hidden="true"></div>', unsafe_allow_html=True)
-    st.markdown("### Personal Quick Check")
-    st.markdown("Quickly check your loan approval chance")
+    st.markdown(
+        """
+    <div class="glass p-6 glow-hover">
+        <h3 class="text-xl font-semibold text-primary">Quick Analysis</h3>
+        <p class="text-zinc-400 mt-2">Fast risk evaluation</p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
     if st.button("Load Demo Case", key="btn_load_demo"):
         st.session_state.mode = "demo"
@@ -86,9 +130,15 @@ with col1:
         st.session_state.show_workbench = False
 
 with col2:
-    st.markdown('<div class="phl-mode-marker phl-mode-pro" aria-hidden="true"></div>', unsafe_allow_html=True)
-    st.markdown("### Professional Analysis")
-    st.markdown("Upload data for structural risk diagnostics")
+    st.markdown(
+        """
+    <div class="glass p-6 glow-hover">
+        <h3 class="text-xl font-semibold text-secondary">Deep Analysis</h3>
+        <p class="text-zinc-400 mt-2">Full structural analysis</p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
     csv_file = st.file_uploader("Upload CSV Dataset", type=["csv"], key="up_csv")
     model_file = st.file_uploader("Upload Model (.pth)", type=["pth"], key="up_pth")
@@ -113,6 +163,7 @@ with col2:
         st.session_state.analysis = load_demo_case()
         st.session_state.show_workbench = True
 
+st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("---")
 
 # ----- 结果展示区 -----
@@ -124,6 +175,7 @@ if mode is None:
 elif mode in ("demo", "simple_input"):
     with st.container(border=True):
         st.markdown('<h2 class="phl-panel-title" style="margin-top:0;">Result</h2>', unsafe_allow_html=True)
+        st.markdown('<div class="glass p-6 mb-6">', unsafe_allow_html=True)
 
         if mode == "demo":
             st.success("Demo case loaded successfully")
@@ -153,26 +205,29 @@ elif mode in ("demo", "simple_input"):
             else:
                 st.success("Likely approved (illustrative)")
 
+        st.markdown("</div>", unsafe_allow_html=True)
         st.info("This is a simplified demonstration, not real model output")
 
     st.markdown("---")
     st.markdown('<h3 class="phl-h3">A real story from an everyday user</h3>', unsafe_allow_html=True)
     st.markdown(
         """
-<div class="phl-quote">
-<p>My friend Mike got rejected by the AI — just like that.</p>
-<p>Mike is 31, works as a warehouse supervisor in Ohio, and has two kids. His old car broke down,
-so he applied for a $9,500 used car loan to get his kids to school and back.</p>
-<p>The system rejected him instantly with only 0.48 approval probability. No real explanation.</p>
-<p>He called me frustrated: “Why did the AI just shut me down like that? I didn’t even get a chance?”</p>
-<p>When I ran his case through this tool, it showed his application landed right on the model’s
-high-sensitivity decision boundary. The internal representation was collapsing, making the decision
-extremely sensitive to small changes.</p>
-<p>The tool suggested: trigger a secondary human review.</p>
-<p>Mike later submitted additional documents. After human review, the loan was approved.</p>
-<p>He told me afterward: “Luckily someone actually looked at it. Otherwise I would have been
-completely blocked by the AI.”</p>
-<p><em>This is a demonstration case. Actual analysis depends on your data.</em></p>
+<div class="glass p-6 border-l-4 border-primary">
+  <p class="text-zinc-300 italic">
+    My friend Mike got rejected by the AI — just like that.<br><br>
+    Mike is 31, works as a warehouse supervisor in Ohio, and has two kids. His old car broke down,
+    so he applied for a $9,500 used car loan to get his kids to school and back.<br><br>
+    The system rejected him instantly with only 0.48 approval probability. No real explanation.<br><br>
+    He called me frustrated: “Why did the AI just shut me down like that? I didn’t even get a chance?”<br><br>
+    When I ran his case through this tool, it showed his application landed right on the model’s
+    high-sensitivity decision boundary. The internal representation was collapsing, making the decision
+    extremely sensitive to small changes.<br><br>
+    The tool suggested: trigger a secondary human review.<br><br>
+    Mike later submitted additional documents. After human review, the loan was approved.<br><br>
+    He told me afterward: “Luckily someone actually looked at it. Otherwise I would have been
+    completely blocked by the AI.”<br><br>
+    This is a demonstration case. Actual analysis depends on your data.
+  </p>
 </div>
 """,
         unsafe_allow_html=True,
@@ -193,12 +248,10 @@ if mode in ("csv", "model") or st.session_state.get("show_workbench"):
     st.markdown("---")
     st.markdown(
         """
-<div class="phl-panel">
-  <h2 class="phl-panel-title">Structural Risk Analysis</h2>
-  <p style="margin:0;color:#94a3b8;font-size:0.92rem;line-height:1.55;">
-    Deep diagnostics on representation geometry, spectrum decay, and boundary sensitivity — designed for
-    model risk management and compliance review workflows.
-  </p>
+<div class="glass p-6 mb-6">
+  <h3 class="text-lg font-semibold text-secondary mb-4">
+    Structural Risk Analysis
+  </h3>
 </div>
 """,
         unsafe_allow_html=True,
@@ -216,6 +269,14 @@ st.markdown(
     <a href="https://github.com/hongtang-ai" target="_blank" rel="noopener noreferrer">hongtang-ai on GitHub</a>
   </p>
 </footer>
+""",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    """
+<div class="text-center text-zinc-500 mt-10 mb-4">
+  PHL Risk Dashboard • Structural Intelligence Layer
+</div>
 """,
     unsafe_allow_html=True,
 )
