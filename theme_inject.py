@@ -1,5 +1,7 @@
 """PHL dashboard theme — CSS string only; injected via st.markdown in app.py."""
 
+import streamlit as st
+
 PHL_THEME_CSS = """
 <style>
   :root {
@@ -436,4 +438,6 @@ PHL_THEME_CSS = """
 
 
 def inject_phl_theme() -> None:
+    import streamlit as st
+
     st.markdown(PHL_THEME_CSS, unsafe_allow_html=True)
