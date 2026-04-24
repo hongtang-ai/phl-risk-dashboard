@@ -23,3 +23,11 @@ def render_overview(analysis: dict | None) -> None:
     if analysis.get("description"):
         st.subheader("Case Background")
         st.write(analysis["description"])
+
+    st.subheader("Regulatory Compliance Summary")
+    st.markdown(
+        "- **SR 11-7 (lightweight alignment)**: Model monitoring includes decision-boundary diagnostics, "
+        "sensitivity checks, and audit logging hooks.\n"
+        "- **EU AI Act (lightweight alignment)**: Dashboard surfaces explainability, bias snapshot, "
+        "and drift indicators for transparency and oversight."
+    )

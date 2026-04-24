@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+from datetime import datetime
 from typing import Any
 
 import numpy as np
@@ -41,6 +42,60 @@ def _extract_core_features(df: pd.DataFrame) -> np.ndarray:
     return core
 
 
+def _ks_statistic_np(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
+    """Lightweight two-sample KS statistic without scipy dependency."""
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
+    a = a[np.isfinite(a)]
+    b = b[np.isfinite(b)]
+    if a.size < 2 or b.size < 2:
+        return 0.0, 1.0
+
+    a_sorted = np.sort(a)
+    b_sorted = np.sort(b)
+    all_vals = np.sort(np.unique(np.concatenate([a_sorted, b_sorted])))
+    cdf_a = np.searchsorted(a_sorted, all_vals, side="right") / a_sorted.size
+    cdf_b = np.searchsorted(b_sorted, all_vals, side="right") / b_sorted.size
+    stat = float(np.max(np.abs(cdf_a - cdf_b)))
+
+    # Kolmogorov asymptotic approximation (good enough for lightweight monitoring).
+    n1, n2 = a_sorted.size, b_sorted.size
+    en = np.sqrt(n1 * n2 / (n1 + n2))
+    pvalue = float(np.clip(2.0 * np.exp(-2.0 * (en * stat) ** 2), 0.0, 1.0))
+    return stat, pvalue
+
+
+def compute_drift(reference_df: pd.DataFrame, current_df: pd.DataFrame) -> dict[str, dict[str, float | str]]:
+    drift: dict[str, dict[str, float | str]] = {}
+    common_cols = list(set(reference_df.columns) & set(current_df.columns))
+    for col in common_cols:
+        if pd.api.types.is_numeric_dtype(reference_df[col]) and pd.api.types.is_numeric_dtype(current_df[col]):
+            stat, pvalue = _ks_statistic_np(
+                reference_df[col].dropna().to_numpy(),
+                current_df[col].dropna().to_numpy(),
+            )
+            drift[col] = {
+                "ks_stat": round(float(stat), 4),
+                "pvalue": round(float(pvalue), 4),
+                "drift_level": "High" if stat > 0.2 else "Medium" if stat > 0.1 else "Low",
+            }
+    return drift
+
+
+def compute_bias(df: pd.DataFrame) -> dict[str, float | str] | None:
+    if "age" not in df.columns or "q" not in df.columns:
+        return None
+    young = df[df["age"] < 40]["q"].mean()
+    old = df[df["age"] >= 40]["q"].mean()
+    if pd.isna(young) or pd.isna(old):
+        return None
+    gap = float(abs(young - old))
+    return {
+        "age_group_diff": round(gap, 4),
+        "bias_level": "High" if gap > 0.15 else "Medium" if gap > 0.08 else "Low",
+    }
+
+
 def run_csv_pipeline(uploaded_file: io.BytesIO | Any) -> dict[str, Any]:
     """
     Numeric columns: last column treated as label; preceding numeric columns as features.
@@ -58,6 +113,14 @@ def run_csv_pipeline(uploaded_file: io.BytesIO | Any) -> dict[str, Any]:
     inference_probs = predict_probabilities(core_x)
     q_first = float(inference_probs[0]) if inference_probs.size > 0 else float("nan")
     q_mean = float(np.mean(inference_probs)) if inference_probs.size > 0 else float("nan")
+
+    # Build a lightweight monitoring frame for drift/bias.
+    monitor_df = pd.DataFrame(core_x, columns=["age", "credit_score", "loan_amount"])
+    monitor_df["q"] = inference_probs
+    reference_df = monitor_df.head(max(1, len(monitor_df) // 2))
+    current_df = monitor_df.tail(max(1, len(monitor_df) // 2))
+    drift = compute_drift(reference_df, current_df)
+    bias = compute_bias(monitor_df)
 
     X = numeric_df.iloc[:, :-1].values.astype(np.float64)
 
@@ -119,6 +182,9 @@ def run_csv_pipeline(uploaded_file: io.BytesIO | Any) -> dict[str, Any]:
         "q": q_first,
         "inference_prob_mean": q_mean,
         "inference_prob_first": q_first,
+        "drift": drift,
+        "bias": bias,
+        "monitoring_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "sigma": sigma,
         "mid": mid,
         "effective_rank": r_f,

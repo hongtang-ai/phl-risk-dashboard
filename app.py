@@ -8,11 +8,16 @@ import streamlit as st
 
 from analyzer import load_demo_case
 from csv_pipeline import run_csv_pipeline
+from explain import compute_feature_impact
+from governance import log_decision
 from inference import predict_approval_probability
 from theme_inject import inject_phl_theme
 from workbench import render_professional_workbench
 
-st.set_page_config(page_title="Credit Decision Boundary Analyzer", layout="wide")
+st.set_page_config(
+    page_title="Decision Stability & Risk Alignment Tool (SR 11-7 & EU AI Act Lightweight Compliance)",
+    layout="wide",
+)
 import streamlit.components.v1 as components
 
 components.html(
@@ -56,10 +61,10 @@ st.markdown(
     """
 <div class="glass p-8 mb-6">
   <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-    Credit Decision Boundary Analyzer
+    Decision Stability & Risk Alignment Tool
   </h1>
   <p class="text-zinc-400 mt-2 text-lg">
-    Structural Risk Intelligence • PHL Framework
+    SR 11-7 & EU AI Act Lightweight Compliance
   </p>
 </div>
 """,
@@ -79,6 +84,10 @@ if "show_workbench" not in st.session_state:
     st.session_state.show_workbench = False
 if "input_data" not in st.session_state:
     st.session_state.input_data = None
+if "audit_logs" not in st.session_state:
+    st.session_state.audit_logs = []
+if "last_audit_signature" not in st.session_state:
+    st.session_state.last_audit_signature = None
 
 # ----- Sidebar Reset -----
 with st.sidebar:
@@ -179,6 +188,7 @@ elif mode in ("demo", "simple_input"):
         st.markdown('<div class="glass p-6 mb-6">', unsafe_allow_html=True)
 
         if mode == "demo":
+            demo_input = {"age": 31.0, "credit_score": 60.0, "loan_amount": 9500.0}
             demo_prob = predict_approval_probability(31.0, 60.0, 9500.0)
             demo_boundary = abs(demo_prob - 0.5)
             demo_region = "boundary-adjacent" if demo_boundary < 0.08 else "stable region"
@@ -190,6 +200,29 @@ elif mode in ("demo", "simple_input"):
                 delta_color="off",
                 help="Model inference based on learned decision boundary.",
             )
+            impacts = compute_feature_impact(
+                demo_input["age"], demo_input["credit_score"], demo_input["loan_amount"]
+            )
+            with st.expander("Explainability (Lightweight Feature Impact)", expanded=False):
+                st.json(impacts)
+            with st.expander("Regulatory Alignment", expanded=False):
+                st.markdown(
+                    "- **SR 11-7**: Structured sensitivity and boundary-distance checks logged for governance.\n"
+                    "- **EU AI Act (Lightweight)**: Includes transparency-oriented explainability and monitoring blocks."
+                )
+
+            demo_sig = f"demo:{demo_prob:.6f}:{demo_boundary:.6f}"
+            if st.session_state.last_audit_signature != demo_sig:
+                log_decision(
+                    st.session_state,
+                    demo_input,
+                    {
+                        "approval_prob": demo_prob,
+                        "risk_score": demo_boundary,
+                        "risk_level": demo_region,
+                    },
+                )
+                st.session_state.last_audit_signature = demo_sig
 
         if mode == "simple_input":
             data = st.session_state.get("input_data") or {}
@@ -261,6 +294,31 @@ elif mode in ("demo", "simple_input"):
                     unsafe_allow_html=True,
                 )
 
+            with st.expander("Explainability (Lightweight Feature Impact)", expanded=False):
+                st.json(compute_feature_impact(age, credit, amount))
+            with st.expander("Bias Snapshot (Age split @ 40)", expanded=False):
+                bias_gap = abs(age_plus - age_minus)
+                bias_level = "High" if bias_gap > 0.15 else "Medium" if bias_gap > 0.08 else "Low"
+                st.json({"age_group_diff_proxy": round(float(bias_gap), 4), "bias_level": bias_level})
+            with st.expander("Regulatory Alignment", expanded=False):
+                st.markdown(
+                    "- **SR 11-7**: Decision boundary distance, local sensitivity, and audit trace are captured.\n"
+                    "- **EU AI Act (Lightweight)**: Adds transparency cards for explainability/bias/monitoring."
+                )
+
+            simple_sig = f"simple:{age:.4f}:{credit:.4f}:{amount:.4f}:{score:.6f}:{boundary_distance:.6f}"
+            if st.session_state.last_audit_signature != simple_sig:
+                log_decision(
+                    st.session_state,
+                    {"age": age, "credit_score": credit, "loan_amount": amount},
+                    {
+                        "approval_prob": score,
+                        "risk_score": boundary_distance,
+                        "risk_level": boundary_region,
+                    },
+                )
+                st.session_state.last_audit_signature = simple_sig
+
         st.markdown("</div>", unsafe_allow_html=True)
         st.info("Model inference based on learned decision boundary")
 
@@ -312,6 +370,38 @@ if mode in ("csv", "model") or st.session_state.get("show_workbench"):
 """,
         unsafe_allow_html=True,
     )
+    analysis_obj = st.session_state.get("analysis") or {}
+    with st.expander("Drift Monitoring", expanded=False):
+        drift = analysis_obj.get("drift")
+        if drift:
+            st.json(drift)
+        else:
+            st.info("Drift metrics available after CSV inference with sufficient numeric overlap.")
+    with st.expander("Bias Detection", expanded=False):
+        bias = analysis_obj.get("bias")
+        if bias:
+            st.json(bias)
+        else:
+            st.info("Bias snapshot unavailable for this mode.")
+    with st.expander("Regulatory Alignment", expanded=False):
+        st.markdown(
+            "- **SR 11-7**: Monitoring, sensitivity, and traceability artifacts are visible in one workflow.\n"
+            "- **EU AI Act (Lightweight)**: Explainability, bias checks, and governance logging are available."
+        )
+
+    if analysis_obj:
+        q_val = analysis_obj.get("q") or analysis_obj.get("inference_prob_first")
+        risk_val = analysis_obj.get("risk_score")
+        risk_lvl = analysis_obj.get("risk_level")
+        analysis_sig = f"analysis:{mode}:{q_val}:{risk_val}:{risk_lvl}"
+        if st.session_state.last_audit_signature != analysis_sig:
+            log_decision(
+                st.session_state,
+                {"mode": mode, "source": "csv/model upload"},
+                {"approval_prob": q_val, "risk_score": risk_val, "risk_level": risk_lvl},
+            )
+            st.session_state.last_audit_signature = analysis_sig
+
     render_professional_workbench(st.session_state.get("analysis"))
 
 st.markdown("---")
@@ -328,6 +418,12 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+with st.expander("Audit Log (Recent 10 decisions)", expanded=False):
+    logs = st.session_state.get("audit_logs", [])
+    if not logs:
+        st.info("No audit records yet.")
+    else:
+        st.json(list(reversed(logs)))
 st.markdown(
     """
 <div class="text-center text-zinc-500 mt-10 mb-4">
