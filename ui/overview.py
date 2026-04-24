@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 
 def render_overview(analysis: dict | None) -> None:
@@ -24,10 +25,12 @@ def render_overview(analysis: dict | None) -> None:
         st.subheader("Case Background")
         st.write(analysis["description"])
 
+    # === UPDATED ===
     st.subheader("Regulatory Compliance Summary")
-    st.markdown(
-        "- **SR 11-7 (lightweight alignment)**: Model monitoring includes decision-boundary diagnostics, "
-        "sensitivity checks, and audit logging hooks.\n"
-        "- **EU AI Act (lightweight alignment)**: Dashboard surfaces explainability, bias snapshot, "
-        "and drift indicators for transparency and oversight."
+    table = pd.DataFrame(
+        [
+            {"Framework": "SR 11-7", "Control": "Model Stability & Monitoring", "Status": "✓"},
+            {"Framework": "EU AI Act", "Control": "Transparency & Bias Mitigation", "Status": "✓"},
+        ]
     )
+    st.table(table)

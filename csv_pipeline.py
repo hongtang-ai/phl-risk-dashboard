@@ -43,7 +43,8 @@ def _extract_core_features(df: pd.DataFrame) -> np.ndarray:
 
 
 def _ks_statistic_np(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
-    """Lightweight two-sample KS statistic without scipy dependency."""
+    # === UPDATED ===
+    """Robust two-sample KS approximation without scipy dependency."""
     a = np.asarray(a, dtype=np.float64)
     b = np.asarray(b, dtype=np.float64)
     a = a[np.isfinite(a)]
@@ -53,15 +54,17 @@ def _ks_statistic_np(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
 
     a_sorted = np.sort(a)
     b_sorted = np.sort(b)
+    # Use merged support points to estimate empirical CDF gap.
     all_vals = np.sort(np.unique(np.concatenate([a_sorted, b_sorted])))
     cdf_a = np.searchsorted(a_sorted, all_vals, side="right") / a_sorted.size
     cdf_b = np.searchsorted(b_sorted, all_vals, side="right") / b_sorted.size
     stat = float(np.max(np.abs(cdf_a - cdf_b)))
 
-    # Kolmogorov asymptotic approximation (good enough for lightweight monitoring).
+    # Kolmogorov asymptotic approximation with finite-sample correction.
     n1, n2 = a_sorted.size, b_sorted.size
     en = np.sqrt(n1 * n2 / (n1 + n2))
-    pvalue = float(np.clip(2.0 * np.exp(-2.0 * (en * stat) ** 2), 0.0, 1.0))
+    lam = (en + 0.12 + 0.11 / max(en, 1e-8)) * stat
+    pvalue = float(np.clip(2.0 * np.exp(-2.0 * lam * lam), 0.0, 1.0))
     return stat, pvalue
 
 
@@ -70,29 +73,62 @@ def compute_drift(reference_df: pd.DataFrame, current_df: pd.DataFrame) -> dict[
     common_cols = list(set(reference_df.columns) & set(current_df.columns))
     for col in common_cols:
         if pd.api.types.is_numeric_dtype(reference_df[col]) and pd.api.types.is_numeric_dtype(current_df[col]):
-            stat, pvalue = _ks_statistic_np(
-                reference_df[col].dropna().to_numpy(),
-                current_df[col].dropna().to_numpy(),
-            )
+            ref_vals = reference_df[col].dropna().to_numpy()
+            cur_vals = current_df[col].dropna().to_numpy()
+            n_ref = int(ref_vals.size)
+            n_cur = int(cur_vals.size)
+            stat, pvalue = _ks_statistic_np(ref_vals, cur_vals)
+            small_sample = n_ref < 30 or n_cur < 30
             drift[col] = {
                 "ks_stat": round(float(stat), 4),
                 "pvalue": round(float(pvalue), 4),
-                "drift_level": "High" if stat > 0.2 else "Medium" if stat > 0.1 else "Low",
+                "sample_size_ref": n_ref,
+                "sample_size_cur": n_cur,
+                "drift_level": (
+                    "Small Sample"
+                    if small_sample
+                    else "High" if stat > 0.2 else "Medium" if stat > 0.1 else "Low"
+                ),
             }
     return drift
 
 
 def compute_bias(df: pd.DataFrame) -> dict[str, float | str] | None:
+    # === UPDATED ===
     if "age" not in df.columns or "q" not in df.columns:
         return None
-    young = df[df["age"] < 40]["q"].mean()
-    old = df[df["age"] >= 40]["q"].mean()
-    if pd.isna(young) or pd.isna(old):
-        return None
-    gap = float(abs(young - old))
+
+    def _group_bias(low_group: np.ndarray, high_group: np.ndarray) -> dict[str, float | str]:
+        if low_group.size < 2 or high_group.size < 2:
+            return {"group_diff": float("nan"), "significance_proxy": float("nan"), "bias_level": "Small Sample"}
+        low_mean = float(np.mean(low_group))
+        high_mean = float(np.mean(high_group))
+        diff = abs(low_mean - high_mean)
+        pooled = float(
+            np.sqrt((np.var(low_group, ddof=1) / low_group.size) + (np.var(high_group, ddof=1) / high_group.size))
+        )
+        t_stat = 0.0 if pooled < 1e-12 else diff / pooled
+        return {
+            "group_diff": round(diff, 4),
+            "significance_proxy": round(float(t_stat), 4),
+            "bias_level": "High" if diff > 0.15 else "Medium" if diff > 0.08 else "Low",
+        }
+
+    young_q = df[df["age"] < 40]["q"].dropna().to_numpy(dtype=np.float64)
+    old_q = df[df["age"] >= 40]["q"].dropna().to_numpy(dtype=np.float64)
+    age_bias = _group_bias(young_q, old_q)
+
+    credit_col = "credit_score" if "credit_score" in df.columns else None
+    if credit_col is not None:
+        high_credit_q = df[df[credit_col] > 680]["q"].dropna().to_numpy(dtype=np.float64)
+        low_credit_q = df[df[credit_col] <= 680]["q"].dropna().to_numpy(dtype=np.float64)
+        credit_bias = _group_bias(low_credit_q, high_credit_q)
+    else:
+        credit_bias = {"group_diff": float("nan"), "significance_proxy": float("nan"), "bias_level": "Unavailable"}
+
     return {
-        "age_group_diff": round(gap, 4),
-        "bias_level": "High" if gap > 0.15 else "Medium" if gap > 0.08 else "Low",
+        "age_group": age_bias,
+        "credit_group_680_threshold": credit_bias,
     }
 
 

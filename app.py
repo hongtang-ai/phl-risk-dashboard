@@ -1,61 +1,30 @@
 import sys
 from pathlib import Path
+import json
 
 # Repo root on path (Streamlit Cloud + local)
 sys.path.append(str(Path(__file__).parent.resolve()))
 
 import streamlit as st
+import pandas as pd
 
 from analyzer import load_demo_case
 from csv_pipeline import run_csv_pipeline
 from explain import compute_feature_impact
 from governance import log_decision
 from inference import predict_approval_probability
-from theme_inject import inject_phl_theme
+from theme_inject import inject_phl_theme as inject_base_theme
 from workbench import render_professional_workbench
 
 st.set_page_config(
     page_title="Decision Stability & Risk Alignment Tool (SR 11-7 & EU AI Act Lightweight Compliance)",
     layout="wide",
 )
-import streamlit.components.v1 as components
+# 在 set_page_config 后立即注入 Tailwind（仅注入一次）
+from utils.theme import inject_phl_theme
 
-components.html(
-    """
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        primary: '#00E5CC',
-        secondary: '#A78BFA',
-        bgdark: '#0a0a0a'
-      }
-    }
-  }
-}
-</script>
-<style>
-body {
-  background-color: #0a0a0a;
-}
-.glass {
-  background: rgba(24,24,27,0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
-}
-.glow-hover:hover {
-  box-shadow: 0 0 25px rgba(0,229,204,0.25);
-  transform: scale(1.02);
-}
-</style>
-""",
-    height=0,
-)
 inject_phl_theme()
+inject_base_theme()
 
 st.markdown(
     """
@@ -86,6 +55,8 @@ if "input_data" not in st.session_state:
     st.session_state.input_data = None
 if "audit_logs" not in st.session_state:
     st.session_state.audit_logs = []
+if "audit_input_hashes" not in st.session_state:
+    st.session_state.audit_input_hashes = []
 if "last_audit_signature" not in st.session_state:
     st.session_state.last_audit_signature = None
 
@@ -190,36 +161,36 @@ elif mode in ("demo", "simple_input"):
         if mode == "demo":
             demo_input = {"age": 31.0, "credit_score": 60.0, "loan_amount": 9500.0}
             demo_prob = predict_approval_probability(31.0, 60.0, 9500.0)
-            demo_boundary = abs(demo_prob - 0.5)
-            demo_region = "boundary-adjacent" if demo_boundary < 0.08 else "stable region"
             st.success("Demo case loaded successfully")
-            st.metric(
-                "Approval Probability",
-                f"{demo_prob:.2f}",
-                delta=demo_region,
-                delta_color="off",
-                help="Model inference based on learned decision boundary.",
-            )
-            impacts = compute_feature_impact(
+            impact_payload = compute_feature_impact(
                 demo_input["age"], demo_input["credit_score"], demo_input["loan_amount"]
             )
-            with st.expander("Explainability (Lightweight Feature Impact)", expanded=False):
-                st.json(impacts)
-            with st.expander("Regulatory Alignment", expanded=False):
+            col_a, col_b = st.columns(2)
+            col_a.metric("Approval Probability", f"{demo_prob:.2f}")
+            col_b.metric("Feature Impact Focus", impact_payload.get("description", "N/A"))
+
+            with st.expander("Regulatory Enhancements", expanded=False):
+                st.markdown("**Explainability**")
+                st.json(impact_payload)
+                st.markdown("**Bias**")
+                st.info("Demo mode does not include batch bias estimation.")
+                st.markdown("**Drift**")
+                st.info("Demo mode does not include drift estimation.")
+                st.markdown("**Regulatory Alignment**")
                 st.markdown(
-                    "- **SR 11-7**: Structured sensitivity and boundary-distance checks logged for governance.\n"
-                    "- **EU AI Act (Lightweight)**: Includes transparency-oriented explainability and monitoring blocks."
+                    "- **SR 11-7**: Model stability checks and governance traceability available.\n"
+                    "- **EU AI Act**: Transparency-oriented explainability module integrated."
                 )
 
-            demo_sig = f"demo:{demo_prob:.6f}:{demo_boundary:.6f}"
+            demo_sig = f"demo:{demo_prob:.6f}"
             if st.session_state.last_audit_signature != demo_sig:
                 log_decision(
                     st.session_state,
                     demo_input,
                     {
                         "approval_prob": demo_prob,
-                        "risk_score": demo_boundary,
-                        "risk_level": demo_region,
+                        "risk_score": abs(demo_prob - 0.5),
+                        "risk_level": "boundary-adjacent" if abs(demo_prob - 0.5) < 0.08 else "stable region",
                     },
                 )
                 st.session_state.last_audit_signature = demo_sig
@@ -233,39 +204,10 @@ elif mode in ("demo", "simple_input"):
             score = max(0.001, min(0.999, score))
             boundary_distance = abs(score - 0.5)
             boundary_region = "boundary-adjacent" if boundary_distance < 0.08 else "stable region"
-            delta_txt = "↑ above boundary" if score >= 0.5 else "↓ below boundary"
-            st.metric(
-                "Approval Probability",
-                f"{score:.2f}",
-                delta=delta_txt,
-                delta_color="normal" if score >= 0.5 else "inverse",
-                help="Model inference based on learned decision boundary.",
-            )
-            st.metric(
-                "Distance to Boundary |q - 0.5|",
-                f"{boundary_distance:.3f}",
-                delta=boundary_region,
-                delta_color="off",
-                help="Lower distance implies greater decision instability near the threshold.",
-            )
-            if score < 0.5:
-                st.warning("Borderline / High risk (illustrative)")
-            else:
-                st.success("Likely approved (illustrative)")
-
-            st.markdown("#### Local Sensitivity Analysis")
-            sensitivity_points = [
-                ("Age -2", max(18.0, age - 2.0), credit, amount),
-                ("Age +2", min(75.0, age + 2.0), credit, amount),
-                ("Credit -5", age, max(0.0, credit - 5.0), amount),
-                ("Credit +5", age, min(100.0, credit + 5.0), amount),
-                ("Amount -500", age, credit, max(100.0, amount - 500.0)),
-                ("Amount +500", age, credit, min(20000.0, amount + 500.0)),
-            ]
-            sens_cols = st.columns(3)
-            for idx, (label, a, c, amt) in enumerate(sensitivity_points):
-                q_alt = predict_approval_probability(a, c, amt)
-                sens_cols[idx % 3].metric(label, f"{q_alt:.3f}", delta=f"{q_alt - score:+.3f}")
+            impact_payload = compute_feature_impact(age, credit, amount)
+            col_a, col_b = st.columns(2)
+            col_a.metric("Approval Probability", f"{score:.2f}")
+            col_b.metric("Feature Impact Focus", impact_payload.get("description", "N/A"))
 
             age_minus = predict_approval_probability(max(18.0, age - 2.0), credit, amount)
             age_plus = predict_approval_probability(min(75.0, age + 2.0), credit, amount)
@@ -274,36 +216,26 @@ elif mode in ("demo", "simple_input"):
             amount_minus = predict_approval_probability(age, credit, max(100.0, amount - 500.0))
             amount_plus = predict_approval_probability(age, credit, min(20000.0, amount + 500.0))
 
-            directional_scores = [
-                ("Age", age_plus - age_minus, "Increase age", "Decrease age"),
-                ("Credit score", credit_plus - credit_minus, "Increase credit score", "Decrease credit score"),
-                ("Loan amount", amount_plus - amount_minus, "Increase loan amount", "Decrease loan amount"),
-            ]
-            ordered = sorted(directional_scores, key=lambda x: abs(x[1]), reverse=True)
-
-            st.markdown("#### Directional Guidance")
-            st.markdown("To improve approval probability:")
-            for feature_name, direction, inc_text, dec_text in ordered:
-                improve_text = inc_text if direction > 0 else dec_text
-                tag = "↑ positive influence" if direction > 0 else "↓ negative influence"
-                tag_color = "#22c55e" if direction > 0 else "#ef4444"
-                st.markdown(
-                    f'- {improve_text} '
-                    f'<span style="color:{tag_color};font-weight:600;">{tag}</span> '
-                    f'<span style="color:#94a3b8;">(direction={direction:+.4f})</span>',
-                    unsafe_allow_html=True,
-                )
-
-            with st.expander("Explainability (Lightweight Feature Impact)", expanded=False):
-                st.json(compute_feature_impact(age, credit, amount))
-            with st.expander("Bias Snapshot (Age split @ 40)", expanded=False):
+            with st.expander("Regulatory Enhancements", expanded=False):
+                st.markdown("**Explainability**")
+                st.json(impact_payload)
+                st.markdown("**Bias**")
                 bias_gap = abs(age_plus - age_minus)
                 bias_level = "High" if bias_gap > 0.15 else "Medium" if bias_gap > 0.08 else "Low"
                 st.json({"age_group_diff_proxy": round(float(bias_gap), 4), "bias_level": bias_level})
-            with st.expander("Regulatory Alignment", expanded=False):
+                st.markdown("**Drift**")
+                st.info("Single-input mode has no batch reference window for drift.")
+                st.markdown("**Local Sensitivity**")
+                sensitivity_rows = [
+                    {"feature": "Age", "minus": round(age_minus, 4), "plus": round(age_plus, 4), "direction": round(age_plus - age_minus, 4)},
+                    {"feature": "Credit Score", "minus": round(credit_minus, 4), "plus": round(credit_plus, 4), "direction": round(credit_plus - credit_minus, 4)},
+                    {"feature": "Loan Amount", "minus": round(amount_minus, 4), "plus": round(amount_plus, 4), "direction": round(amount_plus - amount_minus, 4)},
+                ]
+                st.dataframe(pd.DataFrame(sensitivity_rows), width="stretch", hide_index=True)
+                st.markdown("**Regulatory Alignment**")
                 st.markdown(
-                    "- **SR 11-7**: Decision boundary distance, local sensitivity, and audit trace are captured.\n"
-                    "- **EU AI Act (Lightweight)**: Adds transparency cards for explainability/bias/monitoring."
+                    "- **SR 11-7**: Decision stability, sensitivity, and audit trace captured.\n"
+                    "- **EU AI Act**: Explainability + bias + monitoring stubs integrated."
                 )
 
             simple_sig = f"simple:{age:.4f}:{credit:.4f}:{amount:.4f}:{score:.6f}:{boundary_distance:.6f}"
@@ -371,19 +303,28 @@ if mode in ("csv", "model") or st.session_state.get("show_workbench"):
         unsafe_allow_html=True,
     )
     analysis_obj = st.session_state.get("analysis") or {}
-    with st.expander("Drift Monitoring", expanded=False):
+    with st.expander("Regulatory Enhancements", expanded=False):
+        st.markdown("**Drift Monitoring**")
         drift = analysis_obj.get("drift")
         if drift:
             st.json(drift)
         else:
             st.info("Drift metrics available after CSV inference with sufficient numeric overlap.")
-    with st.expander("Bias Detection", expanded=False):
+
+        st.markdown("**Bias Detection**")
         bias = analysis_obj.get("bias")
         if bias:
             st.json(bias)
         else:
             st.info("Bias snapshot unavailable for this mode.")
-    with st.expander("Regulatory Alignment", expanded=False):
+
+        st.markdown("**Explainability**")
+        if analysis_obj.get("q") is not None:
+            st.info("Batch-mode explainability currently uses summary-level indicators; per-row attribution can be added later.")
+        else:
+            st.info("No explainability payload available for this mode.")
+
+        st.markdown("**Regulatory Alignment**")
         st.markdown(
             "- **SR 11-7**: Monitoring, sensitivity, and traceability artifacts are visible in one workflow.\n"
             "- **EU AI Act (Lightweight)**: Explainability, bias checks, and governance logging are available."
@@ -424,6 +365,12 @@ with st.expander("Audit Log (Recent 10 decisions)", expanded=False):
         st.info("No audit records yet.")
     else:
         st.json(list(reversed(logs)))
+        st.download_button(
+            "Export as JSON",
+            data=json.dumps(logs, ensure_ascii=False, indent=2),
+            file_name="phl_audit_logs.json",
+            mime="application/json",
+        )
 st.markdown(
     """
 <div class="text-center text-zinc-500 mt-10 mb-4">
